@@ -1,0 +1,622 @@
+{
+  "properties": {
+    "apiVersion": {
+      "description": "APIVersion defines the versioned schema of this representation of an object.\nServers should convert recognized schemas to the latest internal value, and\nmay reject unrecognized values.\nMore info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "kind": {
+      "description": "Kind is a string value representing the REST resource this object represents.\nServers may infer this from the endpoint the client submits requests to.\nCannot be updated.\nIn CamelCase.\nMore info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "metadata": {
+      "type": [
+        "object",
+        "null"
+      ]
+    },
+    "spec": {
+      "additionalProperties": false,
+      "properties": {
+        "logLevel": {
+          "description": "Configure verbosity of mongot logs. Defaults to INFO if not set.",
+          "enum": [
+            "TRACE",
+            "DEBUG",
+            "INFO",
+            "WARN",
+            "ERROR"
+          ],
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "persistence": {
+          "additionalProperties": false,
+          "description": "Configure MongoDB Search's persistent volume. If not defined, the operator will request 10GB of storage.",
+          "properties": {
+            "multiple": {
+              "additionalProperties": false,
+              "properties": {
+                "data": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "labelSelector": {
+                      "type": [
+                        "object",
+                        "null"
+                      ],
+                      "x-kubernetes-preserve-unknown-fields": true
+                    },
+                    "storage": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "storageClass": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    }
+                  },
+                  "type": [
+                    "object",
+                    "null"
+                  ]
+                },
+                "journal": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "labelSelector": {
+                      "type": [
+                        "object",
+                        "null"
+                      ],
+                      "x-kubernetes-preserve-unknown-fields": true
+                    },
+                    "storage": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "storageClass": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    }
+                  },
+                  "type": [
+                    "object",
+                    "null"
+                  ]
+                },
+                "logs": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "labelSelector": {
+                      "type": [
+                        "object",
+                        "null"
+                      ],
+                      "x-kubernetes-preserve-unknown-fields": true
+                    },
+                    "storage": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "storageClass": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    }
+                  },
+                  "type": [
+                    "object",
+                    "null"
+                  ]
+                }
+              },
+              "type": [
+                "object",
+                "null"
+              ]
+            },
+            "single": {
+              "additionalProperties": false,
+              "properties": {
+                "labelSelector": {
+                  "type": [
+                    "object",
+                    "null"
+                  ],
+                  "x-kubernetes-preserve-unknown-fields": true
+                },
+                "storage": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "storageClass": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                }
+              },
+              "type": [
+                "object",
+                "null"
+              ]
+            }
+          },
+          "type": [
+            "object",
+            "null"
+          ]
+        },
+        "prometheus": {
+          "additionalProperties": false,
+          "description": "Configure prometheus metrics endpoint in mongot. If not set, the metrics endpoint will be disabled.",
+          "properties": {
+            "port": {
+              "default": 9946,
+              "description": "Port where metrics endpoint will be exposed on. Defaults to 9946.",
+              "maximum": 65535,
+              "minimum": 0,
+              "type": [
+                "integer",
+                "null"
+              ]
+            }
+          },
+          "type": [
+            "object",
+            "null"
+          ]
+        },
+        "resourceRequirements": {
+          "additionalProperties": false,
+          "description": "Configure resource requests and limits for the MongoDB Search pods.",
+          "properties": {
+            "claims": {
+              "description": "Claims lists the names of resources, defined in spec.resourceClaims,\nthat are used by this container.\n\nThis is an alpha field and requires enabling the\nDynamicResourceAllocation feature gate.\n\nThis field is immutable. It can only be set for containers.",
+              "items": {
+                "additionalProperties": false,
+                "description": "ResourceClaim references one entry in PodSpec.ResourceClaims.",
+                "properties": {
+                  "name": {
+                    "description": "Name must match the name of one entry in pod.spec.resourceClaims of\nthe Pod where this field is used. It makes that resource available\ninside a container.",
+                    "type": "string"
+                  },
+                  "request": {
+                    "description": "Request is the name chosen for a request in the referenced claim.\nIf empty, everything from the claim is made available, otherwise\nonly the result of this request.",
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
+                },
+                "required": [
+                  "name"
+                ],
+                "type": "object"
+              },
+              "type": [
+                "array",
+                "null"
+              ],
+              "x-kubernetes-list-map-keys": [
+                "name"
+              ],
+              "x-kubernetes-list-type": "map"
+            },
+            "limits": {
+              "additionalProperties": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "string"
+                  }
+                ],
+                "pattern": "^(\\+|-)?(([0-9]+(\\.[0-9]*)?)|(\\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\\+|-)?(([0-9]+(\\.[0-9]*)?)|(\\.[0-9]+))))?$",
+                "x-kubernetes-int-or-string": true
+              },
+              "description": "Limits describes the maximum amount of compute resources allowed.\nMore info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/",
+              "type": [
+                "object",
+                "null"
+              ]
+            },
+            "requests": {
+              "additionalProperties": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "string"
+                  }
+                ],
+                "pattern": "^(\\+|-)?(([0-9]+(\\.[0-9]*)?)|(\\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\\+|-)?(([0-9]+(\\.[0-9]*)?)|(\\.[0-9]+))))?$",
+                "x-kubernetes-int-or-string": true
+              },
+              "description": "Requests describes the minimum amount of compute resources required.\nIf Requests is omitted for a container, it defaults to Limits if that is explicitly specified,\notherwise to an implementation-defined value. Requests cannot exceed Limits.\nMore info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/",
+              "type": [
+                "object",
+                "null"
+              ]
+            }
+          },
+          "type": [
+            "object",
+            "null"
+          ]
+        },
+        "security": {
+          "additionalProperties": false,
+          "description": "Configure security settings of the MongoDB Search server that MongoDB database is connecting to when performing search queries.",
+          "properties": {
+            "tls": {
+              "additionalProperties": false,
+              "properties": {
+                "certificateKeySecretRef": {
+                  "additionalProperties": false,
+                  "description": "CertificateKeySecret is a reference to a Secret containing a private key and certificate to use for TLS.\nThe key and cert are expected to be PEM encoded and available at \"tls.key\" and \"tls.crt\".\nThis is the same format used for the standard \"kubernetes.io/tls\" Secret type, but no specific type is required.",
+                  "properties": {
+                    "name": {
+                      "default": "",
+                      "description": "Name of the referent.\nThis field is effectively required, but due to backwards compatibility is\nallowed to be empty. Instances of this type with an empty value here are\nalmost certainly wrong.\nMore info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names",
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    }
+                  },
+                  "type": "object",
+                  "x-kubernetes-map-type": "atomic"
+                }
+              },
+              "required": [
+                "certificateKeySecretRef"
+              ],
+              "type": [
+                "object",
+                "null"
+              ]
+            }
+          },
+          "type": [
+            "object",
+            "null"
+          ]
+        },
+        "source": {
+          "additionalProperties": false,
+          "description": "MongoDB database connection details from which MongoDB Search will synchronize data to build indexes.",
+          "properties": {
+            "external": {
+              "additionalProperties": false,
+              "properties": {
+                "hostAndPorts": {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": [
+                    "array",
+                    "null"
+                  ]
+                },
+                "keyfileSecretRef": {
+                  "additionalProperties": false,
+                  "description": "mongod keyfile used to connect to the external MongoDB deployment",
+                  "properties": {
+                    "key": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "name": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "name"
+                  ],
+                  "type": [
+                    "object",
+                    "null"
+                  ]
+                },
+                "tls": {
+                  "additionalProperties": false,
+                  "description": "TLS configuration for the external MongoDB deployment",
+                  "properties": {
+                    "ca": {
+                      "additionalProperties": false,
+                      "description": "CA is a reference to a Secret containing the CA certificate that issued mongod's TLS certificate.\nThe CA certificate is expected to be PEM encoded and available at the \"ca.crt\" key.",
+                      "properties": {
+                        "name": {
+                          "default": "",
+                          "description": "Name of the referent.\nThis field is effectively required, but due to backwards compatibility is\nallowed to be empty. Instances of this type with an empty value here are\nalmost certainly wrong.\nMore info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names",
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        }
+                      },
+                      "type": "object",
+                      "x-kubernetes-map-type": "atomic"
+                    }
+                  },
+                  "required": [
+                    "ca"
+                  ],
+                  "type": [
+                    "object",
+                    "null"
+                  ]
+                }
+              },
+              "type": [
+                "object",
+                "null"
+              ]
+            },
+            "mongodbResourceRef": {
+              "additionalProperties": false,
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "namespace": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                }
+              },
+              "required": [
+                "name"
+              ],
+              "type": [
+                "object",
+                "null"
+              ]
+            },
+            "passwordSecretRef": {
+              "additionalProperties": false,
+              "description": "SecretKeyRef is a reference to a value in a given secret in the same\nnamespace. Based on:\nhttps://kubernetes.io/docs/reference/generated/kubernetes-api/v1.15/#secretkeyselector-v1-core",
+              "properties": {
+                "key": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "name": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "name"
+              ],
+              "type": [
+                "object",
+                "null"
+              ]
+            },
+            "username": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          "type": [
+            "object",
+            "null"
+          ]
+        },
+        "statefulSet": {
+          "additionalProperties": false,
+          "description": "StatefulSetSpec which the operator will apply to the MongoDB Search StatefulSet at the end of the reconcile loop. Use to provide necessary customizations,\nwhich aren't exposed as fields in the MongoDBSearch.spec.",
+          "properties": {
+            "metadata": {
+              "additionalProperties": false,
+              "description": "StatefulSetMetadataWrapper is a wrapper around Labels and Annotations",
+              "properties": {
+                "annotations": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": [
+                    "object",
+                    "null"
+                  ]
+                },
+                "labels": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": [
+                    "object",
+                    "null"
+                  ]
+                }
+              },
+              "type": [
+                "object",
+                "null"
+              ]
+            },
+            "spec": {
+              "type": "object",
+              "x-kubernetes-preserve-unknown-fields": true
+            }
+          },
+          "required": [
+            "spec"
+          ],
+          "type": [
+            "object",
+            "null"
+          ]
+        },
+        "version": {
+          "description": "Optional version of MongoDB Search component (mongot). If not set, then the operator will set the most appropriate version of MongoDB Search.",
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "type": "object"
+    },
+    "status": {
+      "additionalProperties": false,
+      "properties": {
+        "lastTransition": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "message": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "observedGeneration": {
+          "format": "int64",
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "phase": {
+          "type": "string"
+        },
+        "pvc": {
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "phase": {
+                "type": "string"
+              },
+              "statefulsetName": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "phase",
+              "statefulsetName"
+            ],
+            "type": "object"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "resourcesNotReady": {
+          "items": {
+            "additionalProperties": false,
+            "description": "ResourceNotReady describes the dependent resource which is not ready yet",
+            "properties": {
+              "errors": {
+                "items": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "message": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "reason": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    }
+                  },
+                  "type": "object"
+                },
+                "type": [
+                  "array",
+                  "null"
+                ]
+              },
+              "kind": {
+                "description": "ResourceKind specifies a kind of a Kubernetes resource. Used in status of a Custom Resource",
+                "type": "string"
+              },
+              "message": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "name": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "kind",
+              "name"
+            ],
+            "type": "object"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "version": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "warnings": {
+          "items": {
+            "type": "string"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "phase"
+      ],
+      "type": [
+        "object",
+        "null"
+      ]
+    }
+  },
+  "required": [
+    "spec"
+  ],
+  "type": "object"
+}

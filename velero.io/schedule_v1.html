@@ -1,0 +1,903 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Schedule v1 — velero.io</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<style>
+  :root {
+    --bg: #09090b;
+    --bg-surface: rgba(24, 24, 27, 0.6);
+    --bg-hover: rgba(24, 24, 27, 0.8);
+    --fg: #fafafa;
+    --fg-muted: #a1a1aa;
+    --accent: #6bc1fe;
+    --accent-dim: rgba(107, 193, 254, 0.15);
+    --border: rgba(255, 255, 255, 0.1);
+    --border-active: #6bc1fe;
+    --stat-fg: #fafafa;
+    --required-bg: rgba(251, 191, 36, 0.15);
+    --required-fg: #fbbf24;
+    --stripes-dark: repeating-linear-gradient(100deg, #000 0%, #000 7%, transparent 10%, transparent 12%, #000 16%);
+    --rainbow: repeating-linear-gradient(100deg, #fff 10%, #fff 16%, #fff 22%, #fff 30%);
+  }
+  .light {
+    --bg: #f5f7fa;
+    --bg-surface: #ffffff;
+    --bg-hover: #edf0f4;
+    --fg: #18181b;
+    --fg-muted: #6b7785;
+    --accent: #2563b0;
+    --accent-dim: rgba(37, 99, 176, 0.08);
+    --border: #d8dde4;
+    --border-active: #2563b0;
+    --stat-fg: #18181b;
+    --required-bg: rgba(217, 119, 6, 0.1);
+    --required-fg: #b45309;
+    --stripes-dark: none;
+    --rainbow: none;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg); color: var(--fg);
+    max-width: 920px; margin: 0 auto; padding: 2.5rem 1.25rem;
+    position: relative; z-index: 1;
+    transition: background 0.2s, color 0.2s;
+  }
+  body::before {
+    content: '';
+    position: fixed; inset: 0; z-index: -2;
+    pointer-events: none;
+    background-image:
+      radial-gradient(1.5px 1.5px at 31px 47px, rgba(255,255,255,1), transparent),
+      radial-gradient(1px 1px at 212px 23px, rgba(255,255,255,0.7), transparent),
+      radial-gradient(1.5px 1.5px at 68px 289px, rgba(255,255,255,0.84), transparent),
+      radial-gradient(1px 1px at 313px 151px, rgba(255,255,255,0.56), transparent),
+      radial-gradient(1px 1px at 157px 371px, rgba(255,255,255,0.6), transparent),
+      radial-gradient(2px 2px at 19px 83px, rgba(255,255,255,0.96), transparent),
+      radial-gradient(1px 1px at 301px 41px, rgba(255,255,255,0.6), transparent),
+      radial-gradient(1.5px 1.5px at 127px 409px, rgba(255,255,255,0.8), transparent),
+      radial-gradient(1px 1px at 443px 237px, rgba(255,255,255,0.5), transparent),
+      radial-gradient(1.5px 1.5px at 67px 491px, rgba(255,255,255,0.72), transparent),
+      radial-gradient(1px 1px at 11px 37px, rgba(255,255,255,0.72), transparent),
+      radial-gradient(1.5px 1.5px at 191px 213px, rgba(255,255,255,0.9), transparent),
+      radial-gradient(1px 1px at 53px 7px, rgba(255,255,255,0.5), transparent),
+      radial-gradient(1px 1px at 271px 103px, rgba(255,255,255,0.64), transparent);
+    background-size:
+      397px 397px, 397px 397px, 397px 397px, 397px 397px, 397px 397px,
+      509px 509px, 509px 509px, 509px 509px, 509px 509px, 509px 509px,
+      311px 311px, 311px 311px, 311px 311px, 311px 311px;
+    mask-image: linear-gradient(to bottom, black 0%, rgba(0,0,0,0.35) 45%, transparent 80%);
+    -webkit-mask-image: linear-gradient(to bottom, black 0%, rgba(0,0,0,0.35) 45%, transparent 80%);
+  }
+  .flare {
+    position: fixed; top: 0; right: 0;
+    width: 100vw; height: 450px; z-index: -1;
+    pointer-events: none;
+    background-image: var(--stripes-dark), var(--rainbow);
+    background-size: 300% 200%;
+    background-position: 50% 50%;
+    filter: opacity(50%) saturate(200%);
+    opacity: 0.25;
+    mask-image: radial-gradient(ellipse at 100% 0%, black 40%, transparent 70%);
+    -webkit-mask-image: radial-gradient(ellipse at 100% 0%, black 40%, transparent 70%);
+  }
+  .flare::after {
+    content: '';
+    position: absolute; inset: 0;
+    background-image: var(--stripes-dark), var(--rainbow);
+    background-size: 200% 100%;
+    background-attachment: fixed;
+    mix-blend-mode: difference;
+  }
+  .light body::before, .light .flare { display: none; }
+  .theme-toggle {
+    background: none; border: 1px solid var(--border); border-radius: 6px;
+    color: var(--fg-muted); cursor: pointer; padding: 0.35rem 0.6rem; font-size: 0.85rem;
+    transition: border-color 0.2s, color 0.2s;
+  }
+  .theme-toggle:hover { border-color: var(--accent); color: var(--accent); }
+  .copied-toast {
+    position: fixed; bottom: 1.5rem; left: 50%; transform: translateX(-50%);
+    background: var(--accent); color: #09090b; padding: 0.4rem 1rem;
+    border-radius: 6px; font-size: 0.8rem; font-weight: 600;
+    opacity: 0; transition: opacity 0.2s;
+    pointer-events: none; z-index: 10;
+  }
+  .copied-toast.show { opacity: 1; }
+  footer {
+    margin-top: 3rem; padding-top: 1.5rem;
+    border-top: 1px solid var(--border);
+    text-align: center; font-size: 0.8rem; color: var(--fg-muted);
+  }
+  footer a { color: var(--accent); text-decoration: none; }
+  footer a:hover { text-decoration: underline; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  .nav-row {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 1.5rem;
+  }
+  .back-link { font-size: 0.85rem; display: flex; align-items: center; gap: 0.4rem; }
+  .back-link kbd {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-size: 0.6rem; color: var(--fg-muted); background: var(--bg-surface);
+    border: 1px solid var(--border); border-radius: 4px;
+    padding: 0.1rem 0.35rem; line-height: 1;
+  }
+  .meta-cards {
+    display: flex; gap: 0.75rem; margin-bottom: 1.25rem; flex-wrap: wrap;
+  }
+  .meta-card {
+    background: var(--bg-surface); border: 1px solid var(--border);
+    border-radius: 6px; padding: 0.5rem 1rem;
+  }
+  .meta-card .label { font-size: 0.7rem; color: var(--fg-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+  .meta-card .value { font-size: 1rem; font-weight: 600; }
+  .yaml-block {
+    background: var(--bg-surface); border: 1px solid var(--border);
+    border-radius: 6px; padding: 0.75rem 1rem; margin-bottom: 1.5rem;
+    font-family: "SF Mono", "Fira Code", "Cascadia Code", monospace;
+    font-size: 0.8rem; white-space: pre; overflow-x: auto; color: var(--fg);
+  }
+  .toolbar {
+    display: flex; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap;
+    align-items: center; justify-content: space-between;
+  }
+  .toolbar-left { display: flex; gap: 0.75rem; }
+  .toolbar button, .toolbar a {
+    background: none; border: none; color: var(--fg-muted); cursor: pointer;
+    font-size: 0.8rem; padding: 0.2rem 0; transition: color 0.15s;
+  }
+  .toolbar button:hover, .toolbar a:hover { color: var(--accent); text-decoration: underline; }
+  .prop {
+    border: 1px solid var(--border); border-radius: 6px;
+    margin-bottom: 0.35rem; transition: border-color 0.2s;
+  }
+  .prop[open] { border-color: var(--border-active); border-left-width: 2px; }
+  .prop > summary {
+    padding: 0.5rem 0.75rem; cursor: pointer;
+    font-size: 0.85rem; background: var(--bg-surface); border-radius: 6px;
+    list-style: none; display: flex; align-items: center; gap: 0.5rem;
+    transition: background 0.15s;
+  }
+  .prop > summary::-webkit-details-marker { display: none; }
+  .prop > summary::before { content: "\25B8"; color: var(--fg-muted); font-size: 0.7rem; }
+  .prop[open] > summary::before { content: "\25BE"; color: var(--accent); }
+  .prop > summary:hover { background: var(--bg-hover); }
+  .prop-content { padding: 0.5rem 0.75rem 0.75rem; padding-left: 1.5rem; }
+  .prop-leaf {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.85rem; display: flex; align-items: flex-start; gap: 0.5rem;
+    border: 1px solid var(--border); border-radius: 6px;
+    margin-bottom: 0.35rem; background: var(--bg-surface);
+  }
+  .prop-leaf .prop-name { min-width: 0; }
+  .prop-name {
+    font-family: "SF Mono", "Fira Code", "Cascadia Code", monospace;
+    color: var(--accent); font-weight: 600; white-space: nowrap;
+  }
+  .type-badge {
+    background: var(--accent-dim); color: var(--accent);
+    font-size: 0.65rem; font-weight: 700; padding: 0.1rem 0.4rem;
+    border-radius: 8px; white-space: nowrap;
+  }
+  .required-badge {
+    background: var(--required-bg); color: var(--required-fg);
+    font-size: 0.65rem; font-weight: 700; padding: 0.1rem 0.4rem;
+    border-radius: 8px; white-space: nowrap;
+  }
+  .prop-desc { color: var(--fg-muted); font-size: 0.82rem; margin-top: 0.25rem; }
+  .prop-constraints {
+    color: var(--fg-muted); font-size: 0.75rem; margin-top: 0.2rem;
+    font-family: "SF Mono", "Fira Code", "Cascadia Code", monospace;
+  }
+  .prop-children { margin-top: 0.5rem; }
+  .leaf-desc { color: var(--fg-muted); font-size: 0.82rem; flex: 1; min-width: 0; }
+  .leaf-constraints {
+    color: var(--fg-muted); font-size: 0.75rem; margin-top: 0.15rem;
+    font-family: "SF Mono", "Fira Code", "Cascadia Code", monospace;
+  }
+</style>
+<script>if(localStorage.getItem('theme')==='light')document.documentElement.className='light';</script>
+</head>
+<body>
+<div class="flare"></div>
+<div class="nav-row">
+  <a href="/" class="back-link">← Back to index <kbd>Esc</kbd></a>
+  <button class="theme-toggle" onclick="toggleTheme()" title="Toggle light/dark mode">☀/☾</button>
+</div>
+<div class="meta-cards">
+  <div class="meta-card"><div class="label">Kind</div><div class="value">Schedule</div></div>
+  <div class="meta-card"><div class="label">Group</div><div class="value">velero.io</div></div>
+  <div class="meta-card"><div class="label">Version</div><div class="value">v1</div></div>
+</div>
+<div class="yaml-block">apiVersion: velero.io/v1
+kind: Schedule
+metadata:
+  name: example</div>
+<div class="toolbar">
+  <div class="toolbar-left">
+    <button id="expand-all">Expand all</button>
+    <button id="collapse-all">Collapse all</button>
+  </div>
+  <div class="toolbar-left">
+    <a href="/velero.io/schedule_v1.json" target="_blank">View raw schema</a>
+    <button id="copy-url" data-url="/velero.io/schedule_v1.json">Copy schema URL</button>
+  </div>
+</div>
+<div id="properties">
+<div class="prop-leaf">
+  <span class="prop-name">apiVersion</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">APIVersion defines the versioned schema of this representation of an object.
+Servers should convert recognized schemas to the latest internal value, and
+may reject unrecognized values.
+More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">kind</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">Kind is a string value representing the REST resource this object represents.
+Servers may infer this from the endpoint the client submits requests to.
+Cannot be updated.
+In CamelCase.
+More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">metadata</span>
+  <span class="type-badge">object</span>
+  <div class="leaf-desc">
+  </div>
+</div>
+<details class="prop">
+<summary>
+  <span class="prop-name">spec</span>
+  <span class="type-badge">object</span>
+</summary>
+<div class="prop-content"><div class="prop-desc">ScheduleSpec defines the specification for a Velero schedule</div>
+  <div class="prop-children">
+<div class="prop-leaf">
+  <span class="prop-name">paused</span>
+  <span class="type-badge">boolean</span>
+  <div class="leaf-desc">Paused specifies whether the schedule is paused or not
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">schedule</span>
+  <span class="type-badge">string</span> <span class="required-badge">required</span>
+  <div class="leaf-desc">Schedule is a Cron expression defining when to run
+the Backup.
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">skipImmediately</span>
+  <span class="type-badge">boolean</span>
+  <div class="leaf-desc">SkipImmediately specifies whether to skip backup if schedule is due immediately from `schedule.status.lastBackup` timestamp when schedule is unpaused or if schedule is new.
+If true, backup will be skipped immediately when schedule is unpaused if it is due based on .Status.LastBackupTimestamp or schedule is new, and will run at next schedule time.
+If false, backup will not be skipped immediately when schedule is unpaused, but will run at next schedule time.
+If empty, will follow server configuration (default: false).
+  </div>
+</div>
+<details class="prop">
+<summary>
+  <span class="prop-name">template</span>
+  <span class="type-badge">object</span> <span class="required-badge">required</span>
+</summary>
+<div class="prop-content"><div class="prop-desc">Template is the definition of the Backup to be run
+on the provided schedule</div>
+  <div class="prop-children">
+<div class="prop-leaf">
+  <span class="prop-name">csiSnapshotTimeout</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">CSISnapshotTimeout specifies the time used to wait for CSI VolumeSnapshot status turns to
+ReadyToUse during creation, before returning error as timeout.
+The default value is 10 minute.
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">datamover</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">DataMover specifies the data mover to be used by the backup.
+If DataMover is &#34;&#34; or &#34;velero&#34;, the built-in data mover will be used.
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">defaultVolumesToFsBackup</span>
+  <span class="type-badge">boolean</span>
+  <div class="leaf-desc">DefaultVolumesToFsBackup specifies whether pod volume file system backup should be used
+for all volumes by default.
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">defaultVolumesToRestic</span>
+  <span class="type-badge">boolean</span>
+  <div class="leaf-desc">DefaultVolumesToRestic specifies whether restic should be used to take a
+backup of all pod volumes by default.
+
+Deprecated: this field is no longer used and will be removed entirely in future. Use DefaultVolumesToFsBackup instead.
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">excludedClusterScopedResources</span>
+  <span class="type-badge">[]string</span>
+  <div class="leaf-desc">ExcludedClusterScopedResources is a slice of cluster-scoped
+resource type names to exclude from the backup.
+If set to &#34;*&#34;, all cluster-scoped resource types are excluded.
+The default value is empty.
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">excludedNamespaceScopedResources</span>
+  <span class="type-badge">[]string</span>
+  <div class="leaf-desc">ExcludedNamespaceScopedResources is a slice of namespace-scoped
+resource type names to exclude from the backup.
+If set to &#34;*&#34;, all namespace-scoped resource types are excluded.
+The default value is empty.
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">excludedNamespaces</span>
+  <span class="type-badge">[]string</span>
+  <div class="leaf-desc">ExcludedNamespaces contains a list of namespaces that are not
+included in the backup.
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">excludedResources</span>
+  <span class="type-badge">[]string</span>
+  <div class="leaf-desc">ExcludedResources is a slice of resource names that are not
+included in the backup.
+  </div>
+</div>
+<details class="prop">
+<summary>
+  <span class="prop-name">hooks</span>
+  <span class="type-badge">object</span>
+</summary>
+<div class="prop-content"><div class="prop-desc">Hooks represent custom behaviors that should be executed at different phases of the backup.</div>
+  <div class="prop-children">
+<details class="prop">
+<summary>
+  <span class="prop-name">resources</span>
+  <span class="type-badge">[]object</span>
+</summary>
+<div class="prop-content"><div class="prop-desc">Resources are hooks that should be executed when backing up individual instances of a resource.</div>
+  <div class="prop-children">
+<div class="prop-leaf">
+  <span class="prop-name">excludedNamespaces</span>
+  <span class="type-badge">[]string</span>
+  <div class="leaf-desc">ExcludedNamespaces specifies the namespaces to which this hook spec does not apply.
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">excludedResources</span>
+  <span class="type-badge">[]string</span>
+  <div class="leaf-desc">ExcludedResources specifies the resources to which this hook spec does not apply.
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">includedNamespaces</span>
+  <span class="type-badge">[]string</span>
+  <div class="leaf-desc">IncludedNamespaces specifies the namespaces to which this hook spec applies. If empty, it applies
+to all namespaces.
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">includedResources</span>
+  <span class="type-badge">[]string</span>
+  <div class="leaf-desc">IncludedResources specifies the resources to which this hook spec applies. If empty, it applies
+to all resources.
+  </div>
+</div>
+<details class="prop">
+<summary>
+  <span class="prop-name">labelSelector</span>
+  <span class="type-badge">object</span>
+</summary>
+<div class="prop-content"><div class="prop-desc">LabelSelector, if specified, filters the resources to which this hook spec applies.</div>
+  <div class="prop-children">
+<details class="prop">
+<summary>
+  <span class="prop-name">matchExpressions</span>
+  <span class="type-badge">[]object</span>
+</summary>
+<div class="prop-content"><div class="prop-desc">matchExpressions is a list of label selector requirements. The requirements are ANDed.</div>
+  <div class="prop-children">
+<div class="prop-leaf">
+  <span class="prop-name">key</span>
+  <span class="type-badge">string</span> <span class="required-badge">required</span>
+  <div class="leaf-desc">key is the label key that the selector applies to.
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">operator</span>
+  <span class="type-badge">string</span> <span class="required-badge">required</span>
+  <div class="leaf-desc">operator represents a key&#39;s relationship to a set of values.
+Valid operators are In, NotIn, Exists and DoesNotExist.
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">values</span>
+  <span class="type-badge">[]string</span>
+  <div class="leaf-desc">values is an array of string values. If the operator is In or NotIn,
+the values array must be non-empty. If the operator is Exists or DoesNotExist,
+the values array must be empty. This array is replaced during a strategic
+merge patch.
+  </div>
+</div>
+  </div>
+</div>
+</details>
+<div class="prop-leaf">
+  <span class="prop-name">matchLabels</span>
+  <span class="type-badge">object</span>
+  <div class="leaf-desc">matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+map is equivalent to an element of matchExpressions, whose key field is &#34;key&#34;, the
+operator is &#34;In&#34;, and the values array contains only &#34;value&#34;. The requirements are ANDed.
+  </div>
+</div>
+  </div>
+</div>
+</details>
+<div class="prop-leaf">
+  <span class="prop-name">name</span>
+  <span class="type-badge">string</span> <span class="required-badge">required</span>
+  <div class="leaf-desc">Name is the name of this hook.
+  </div>
+</div>
+<details class="prop">
+<summary>
+  <span class="prop-name">post</span>
+  <span class="type-badge">[]object</span>
+</summary>
+<div class="prop-content"><div class="prop-desc">PostHooks is a list of BackupResourceHooks to execute after storing the item in the backup.
+These are executed after all &#34;additional items&#34; from item actions are processed.</div>
+  <div class="prop-children">
+<details class="prop">
+<summary>
+  <span class="prop-name">exec</span>
+  <span class="type-badge">object</span> <span class="required-badge">required</span>
+</summary>
+<div class="prop-content"><div class="prop-desc">Exec defines an exec hook.</div>
+  <div class="prop-children">
+<div class="prop-leaf">
+  <span class="prop-name">command</span>
+  <span class="type-badge">[]string</span> <span class="required-badge">required</span>
+  <div class="leaf-desc">Command is the command and arguments to execute.<div class="leaf-constraints">minItems: 1</div>
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">container</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">Container is the container in the pod where the command should be executed. If not specified,
+the pod&#39;s first container is used.
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">onError</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">OnError specifies how Velero should behave if it encounters an error executing this hook.<div class="leaf-constraints">enum: Continue, Fail</div>
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">timeout</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">Timeout defines the maximum amount of time Velero should wait for the hook to complete before
+considering the execution a failure.
+  </div>
+</div>
+  </div>
+</div>
+</details>
+  </div>
+</div>
+</details>
+<details class="prop">
+<summary>
+  <span class="prop-name">pre</span>
+  <span class="type-badge">[]object</span>
+</summary>
+<div class="prop-content"><div class="prop-desc">PreHooks is a list of BackupResourceHooks to execute prior to storing the item in the backup.
+These are executed before any &#34;additional items&#34; from item actions are processed.</div>
+  <div class="prop-children">
+<details class="prop">
+<summary>
+  <span class="prop-name">exec</span>
+  <span class="type-badge">object</span> <span class="required-badge">required</span>
+</summary>
+<div class="prop-content"><div class="prop-desc">Exec defines an exec hook.</div>
+  <div class="prop-children">
+<div class="prop-leaf">
+  <span class="prop-name">command</span>
+  <span class="type-badge">[]string</span> <span class="required-badge">required</span>
+  <div class="leaf-desc">Command is the command and arguments to execute.<div class="leaf-constraints">minItems: 1</div>
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">container</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">Container is the container in the pod where the command should be executed. If not specified,
+the pod&#39;s first container is used.
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">onError</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">OnError specifies how Velero should behave if it encounters an error executing this hook.<div class="leaf-constraints">enum: Continue, Fail</div>
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">timeout</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">Timeout defines the maximum amount of time Velero should wait for the hook to complete before
+considering the execution a failure.
+  </div>
+</div>
+  </div>
+</div>
+</details>
+  </div>
+</div>
+</details>
+  </div>
+</div>
+</details>
+  </div>
+</div>
+</details>
+<div class="prop-leaf">
+  <span class="prop-name">includeClusterResources</span>
+  <span class="type-badge">boolean</span>
+  <div class="leaf-desc">IncludeClusterResources specifies whether cluster-scoped resources
+should be included for consideration in the backup.
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">includedClusterScopedResources</span>
+  <span class="type-badge">[]string</span>
+  <div class="leaf-desc">IncludedClusterScopedResources is a slice of cluster-scoped
+resource type names to include in the backup.
+If set to &#34;*&#34;, all cluster-scoped resource types are included.
+The default value is empty, which means only related
+cluster-scoped resources are included.
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">includedNamespaceScopedResources</span>
+  <span class="type-badge">[]string</span>
+  <div class="leaf-desc">IncludedNamespaceScopedResources is a slice of namespace-scoped
+resource type names to include in the backup.
+The default value is &#34;*&#34;.
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">includedNamespaces</span>
+  <span class="type-badge">[]string</span>
+  <div class="leaf-desc">IncludedNamespaces is a slice of namespace names to include objects
+from. If empty, all namespaces are included.
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">includedResources</span>
+  <span class="type-badge">[]string</span>
+  <div class="leaf-desc">IncludedResources is a slice of resource names to include
+in the backup. If empty, all resources are included.
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">itemOperationTimeout</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">ItemOperationTimeout specifies the time used to wait for asynchronous BackupItemAction operations
+The default value is 4 hour.
+  </div>
+</div>
+<details class="prop">
+<summary>
+  <span class="prop-name">labelSelector</span>
+  <span class="type-badge">object</span>
+</summary>
+<div class="prop-content"><div class="prop-desc">LabelSelector is a metav1.LabelSelector to filter with
+when adding individual objects to the backup. If empty
+or nil, all objects are included. Optional.</div>
+  <div class="prop-children">
+<details class="prop">
+<summary>
+  <span class="prop-name">matchExpressions</span>
+  <span class="type-badge">[]object</span>
+</summary>
+<div class="prop-content"><div class="prop-desc">matchExpressions is a list of label selector requirements. The requirements are ANDed.</div>
+  <div class="prop-children">
+<div class="prop-leaf">
+  <span class="prop-name">key</span>
+  <span class="type-badge">string</span> <span class="required-badge">required</span>
+  <div class="leaf-desc">key is the label key that the selector applies to.
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">operator</span>
+  <span class="type-badge">string</span> <span class="required-badge">required</span>
+  <div class="leaf-desc">operator represents a key&#39;s relationship to a set of values.
+Valid operators are In, NotIn, Exists and DoesNotExist.
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">values</span>
+  <span class="type-badge">[]string</span>
+  <div class="leaf-desc">values is an array of string values. If the operator is In or NotIn,
+the values array must be non-empty. If the operator is Exists or DoesNotExist,
+the values array must be empty. This array is replaced during a strategic
+merge patch.
+  </div>
+</div>
+  </div>
+</div>
+</details>
+<div class="prop-leaf">
+  <span class="prop-name">matchLabels</span>
+  <span class="type-badge">object</span>
+  <div class="leaf-desc">matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+map is equivalent to an element of matchExpressions, whose key field is &#34;key&#34;, the
+operator is &#34;In&#34;, and the values array contains only &#34;value&#34;. The requirements are ANDed.
+  </div>
+</div>
+  </div>
+</div>
+</details>
+<details class="prop">
+<summary>
+  <span class="prop-name">metadata</span>
+  <span class="type-badge">object</span>
+</summary>
+<div class="prop-content">
+  <div class="prop-children">
+<div class="prop-leaf">
+  <span class="prop-name">labels</span>
+  <span class="type-badge">object</span>
+  <div class="leaf-desc">
+  </div>
+</div>
+  </div>
+</div>
+</details>
+<details class="prop">
+<summary>
+  <span class="prop-name">orLabelSelectors</span>
+  <span class="type-badge">[]object</span>
+</summary>
+<div class="prop-content"><div class="prop-desc">OrLabelSelectors is list of metav1.LabelSelector to filter with
+when adding individual objects to the backup. If multiple provided
+they will be joined by the OR operator. LabelSelector as well as
+OrLabelSelectors cannot co-exist in backup request, only one of them
+can be used.</div>
+  <div class="prop-children">
+<details class="prop">
+<summary>
+  <span class="prop-name">matchExpressions</span>
+  <span class="type-badge">[]object</span>
+</summary>
+<div class="prop-content"><div class="prop-desc">matchExpressions is a list of label selector requirements. The requirements are ANDed.</div>
+  <div class="prop-children">
+<div class="prop-leaf">
+  <span class="prop-name">key</span>
+  <span class="type-badge">string</span> <span class="required-badge">required</span>
+  <div class="leaf-desc">key is the label key that the selector applies to.
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">operator</span>
+  <span class="type-badge">string</span> <span class="required-badge">required</span>
+  <div class="leaf-desc">operator represents a key&#39;s relationship to a set of values.
+Valid operators are In, NotIn, Exists and DoesNotExist.
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">values</span>
+  <span class="type-badge">[]string</span>
+  <div class="leaf-desc">values is an array of string values. If the operator is In or NotIn,
+the values array must be non-empty. If the operator is Exists or DoesNotExist,
+the values array must be empty. This array is replaced during a strategic
+merge patch.
+  </div>
+</div>
+  </div>
+</div>
+</details>
+<div class="prop-leaf">
+  <span class="prop-name">matchLabels</span>
+  <span class="type-badge">object</span>
+  <div class="leaf-desc">matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+map is equivalent to an element of matchExpressions, whose key field is &#34;key&#34;, the
+operator is &#34;In&#34;, and the values array contains only &#34;value&#34;. The requirements are ANDed.
+  </div>
+</div>
+  </div>
+</div>
+</details>
+<div class="prop-leaf">
+  <span class="prop-name">orderedResources</span>
+  <span class="type-badge">object</span>
+  <div class="leaf-desc">OrderedResources specifies the backup order of resources of specific Kind.
+The map key is the resource name and value is a list of object names separated by commas.
+Each resource name has format &#34;namespace/objectname&#34;.  For cluster resources, simply use &#34;objectname&#34;.
+  </div>
+</div>
+<details class="prop">
+<summary>
+  <span class="prop-name">resourcePolicy</span>
+  <span class="type-badge">object</span>
+</summary>
+<div class="prop-content"><div class="prop-desc">ResourcePolicy specifies the referenced resource policies that backup should follow</div>
+  <div class="prop-children">
+<div class="prop-leaf">
+  <span class="prop-name">apiGroup</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">APIGroup is the group for the resource being referenced.
+If APIGroup is not specified, the specified Kind must be in the core API group.
+For any other third-party types, APIGroup is required.
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">kind</span>
+  <span class="type-badge">string</span> <span class="required-badge">required</span>
+  <div class="leaf-desc">Kind is the type of resource being referenced
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">name</span>
+  <span class="type-badge">string</span> <span class="required-badge">required</span>
+  <div class="leaf-desc">Name is the name of resource being referenced
+  </div>
+</div>
+  </div>
+</div>
+</details>
+<div class="prop-leaf">
+  <span class="prop-name">snapshotMoveData</span>
+  <span class="type-badge">boolean</span>
+  <div class="leaf-desc">SnapshotMoveData specifies whether snapshot data should be moved
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">snapshotVolumes</span>
+  <span class="type-badge">boolean</span>
+  <div class="leaf-desc">SnapshotVolumes specifies whether to take snapshots
+of any PV&#39;s referenced in the set of objects included
+in the Backup.
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">storageLocation</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">StorageLocation is a string containing the name of a BackupStorageLocation where the backup should be stored.
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">ttl</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">TTL is a time.Duration-parseable string describing how long
+the Backup should be retained for.
+  </div>
+</div>
+<details class="prop">
+<summary>
+  <span class="prop-name">uploaderConfig</span>
+  <span class="type-badge">object</span>
+</summary>
+<div class="prop-content"><div class="prop-desc">UploaderConfig specifies the configuration for the uploader.</div>
+  <div class="prop-children">
+<div class="prop-leaf">
+  <span class="prop-name">parallelFilesUpload</span>
+  <span class="type-badge">integer</span>
+  <div class="leaf-desc">ParallelFilesUpload is the number of files parallel uploads to perform when using the uploader.
+  </div>
+</div>
+  </div>
+</div>
+</details>
+<div class="prop-leaf">
+  <span class="prop-name">volumeGroupSnapshotLabelKey</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">VolumeGroupSnapshotLabelKey specifies the label key to group PVCs under a VGS.
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">volumeSnapshotLocations</span>
+  <span class="type-badge">[]string</span>
+  <div class="leaf-desc">VolumeSnapshotLocations is a list containing names of VolumeSnapshotLocations associated with this backup.
+  </div>
+</div>
+  </div>
+</div>
+</details>
+<div class="prop-leaf">
+  <span class="prop-name">useOwnerReferencesInBackup</span>
+  <span class="type-badge">boolean</span>
+  <div class="leaf-desc">UseOwnerReferencesBackup specifies whether to use
+OwnerReferences on backups created by this Schedule.
+  </div>
+</div>
+  </div>
+</div>
+</details>
+<details class="prop">
+<summary>
+  <span class="prop-name">status</span>
+  <span class="type-badge">object</span>
+</summary>
+<div class="prop-content"><div class="prop-desc">ScheduleStatus captures the current state of a Velero schedule</div>
+  <div class="prop-children">
+<div class="prop-leaf">
+  <span class="prop-name">lastBackup</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">LastBackup is the last time a Backup was run for this
+Schedule schedule<div class="leaf-constraints">format: date-time</div>
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">lastSkipped</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">LastSkipped is the last time a Schedule was skipped<div class="leaf-constraints">format: date-time</div>
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">phase</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">Phase is the current phase of the Schedule<div class="leaf-constraints">enum: New, Enabled, FailedValidation</div>
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">validationErrors</span>
+  <span class="type-badge">[]string</span>
+  <div class="leaf-desc">ValidationErrors is a slice of all validation errors (if
+applicable)
+  </div>
+</div>
+  </div>
+</div>
+</details>
+</div>
+<div class="copied-toast" id="toast">Copied!</div>
+<footer>
+  Generated by <a href="https://github.com/sholdee/crd-schema-publisher">crd-schema-publisher</a>
+</footer>
+<script>
+(function(){
+  var props = document.querySelectorAll('.prop');
+  document.getElementById('expand-all').addEventListener('click', function(){
+    props.forEach(function(p){ p.setAttribute('open',''); });
+  });
+  document.getElementById('collapse-all').addEventListener('click', function(){
+    props.forEach(function(p){ p.removeAttribute('open'); });
+  });
+  var toast = document.getElementById('toast');
+  var toastTimer;
+  document.addEventListener('keydown', function(e){
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      if (document.activeElement && document.activeElement !== document.body) {
+        document.activeElement.blur();
+      }
+      location.href = '/';
+    }
+  });
+  document.getElementById('copy-url').addEventListener('click', function(){
+    var url = location.origin + this.dataset.url;
+    navigator.clipboard.writeText(url).then(function(){
+      clearTimeout(toastTimer);
+      toast.classList.add('show');
+      toastTimer = setTimeout(function(){ toast.classList.remove('show'); }, 1500);
+    });
+  });
+})();
+function toggleTheme(){
+  document.documentElement.classList.toggle('light');
+  localStorage.setItem('theme', document.documentElement.classList.contains('light') ? 'light' : 'dark');
+}
+</script>
+</body>
+</html>

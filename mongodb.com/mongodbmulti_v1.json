@@ -1,0 +1,1112 @@
+{
+  "properties": {
+    "apiVersion": {
+      "description": "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "kind": {
+      "description": "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "metadata": {
+      "type": [
+        "object",
+        "null"
+      ]
+    },
+    "spec": {
+      "additionalProperties": false,
+      "properties": {
+        "additionalMongodConfig": {
+          "description": "AdditionalMongodConfig is additional configuration that can be passed to each data-bearing mongod at runtime. Uses the same structure as the mongod configuration file: https://docs.mongodb.com/manual/reference/configuration-options/",
+          "type": [
+            "object",
+            "null"
+          ],
+          "x-kubernetes-preserve-unknown-fields": true
+        },
+        "agent": {
+          "additionalProperties": false,
+          "properties": {
+            "startupOptions": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": [
+                "object",
+                "null"
+              ]
+            }
+          },
+          "type": [
+            "object",
+            "null"
+          ]
+        },
+        "backup": {
+          "additionalProperties": false,
+          "description": "Backup contains configuration options for configuring backup for this MongoDB resource",
+          "properties": {
+            "assignmentLabels": {
+              "description": "Assignment Labels set in the Ops Manager",
+              "items": {
+                "type": "string"
+              },
+              "type": [
+                "array",
+                "null"
+              ]
+            },
+            "autoTerminateOnDeletion": {
+              "description": "AutoTerminateOnDeletion indicates if the Operator should stop and terminate the Backup before the cleanup, when the MongoDB CR is deleted",
+              "type": [
+                "boolean",
+                "null"
+              ]
+            },
+            "encryption": {
+              "additionalProperties": false,
+              "description": "Encryption settings",
+              "properties": {
+                "kmip": {
+                  "additionalProperties": false,
+                  "description": "Kmip corresponds to the KMIP configuration assigned to the Ops Manager Project's configuration.",
+                  "properties": {
+                    "client": {
+                      "additionalProperties": false,
+                      "description": "KMIP Client configuration",
+                      "properties": {
+                        "clientCertificatePrefix": {
+                          "description": "A prefix used to construct KMIP client certificate (and corresponding password) Secret names. The names are generated using the following pattern: KMIP Client Certificate (TLS Secret): \u003cclientCertificatePrefix\u003e-\u003cCR Name\u003e-kmip-client KMIP Client Certificate Password: \u003cclientCertificatePrefix\u003e-\u003cCR Name\u003e-kmip-client-password The expected key inside is called \"password\".",
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        }
+                      },
+                      "type": "object"
+                    }
+                  },
+                  "required": [
+                    "client"
+                  ],
+                  "type": [
+                    "object",
+                    "null"
+                  ]
+                }
+              },
+              "type": [
+                "object",
+                "null"
+              ]
+            },
+            "mode": {
+              "enum": [
+                "enabled",
+                "disabled",
+                "terminated"
+              ],
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "snapshotSchedule": {
+              "additionalProperties": false,
+              "properties": {
+                "clusterCheckpointIntervalMin": {
+                  "enum": [
+                    15,
+                    30,
+                    60
+                  ],
+                  "type": [
+                    "integer",
+                    "null"
+                  ]
+                },
+                "dailySnapshotRetentionDays": {
+                  "description": "Number of days to retain daily snapshots. Setting 0 will disable this rule.",
+                  "maximum": 365,
+                  "minimum": 0,
+                  "type": [
+                    "integer",
+                    "null"
+                  ]
+                },
+                "fullIncrementalDayOfWeek": {
+                  "description": "Day of the week when Ops Manager takes a full snapshot. This ensures a recent complete backup. Ops Manager sets the default value to SUNDAY.",
+                  "enum": [
+                    "SUNDAY",
+                    "MONDAY",
+                    "TUESDAY",
+                    "WEDNESDAY",
+                    "THURSDAY",
+                    "FRIDAY",
+                    "SATURDAY"
+                  ],
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "monthlySnapshotRetentionMonths": {
+                  "description": "Number of months to retain weekly snapshots. Setting 0 will disable this rule.",
+                  "maximum": 36,
+                  "minimum": 0,
+                  "type": [
+                    "integer",
+                    "null"
+                  ]
+                },
+                "pointInTimeWindowHours": {
+                  "description": "Number of hours in the past for which a point-in-time snapshot can be created.",
+                  "enum": [
+                    1,
+                    2,
+                    3,
+                    4,
+                    5,
+                    6,
+                    7,
+                    15,
+                    30,
+                    60,
+                    90,
+                    120,
+                    180,
+                    360
+                  ],
+                  "type": [
+                    "integer",
+                    "null"
+                  ]
+                },
+                "referenceHourOfDay": {
+                  "description": "Hour of the day to schedule snapshots using a 24-hour clock, in UTC.",
+                  "maximum": 23,
+                  "minimum": 0,
+                  "type": [
+                    "integer",
+                    "null"
+                  ]
+                },
+                "referenceMinuteOfHour": {
+                  "description": "Minute of the hour to schedule snapshots, in UTC.",
+                  "maximum": 59,
+                  "minimum": 0,
+                  "type": [
+                    "integer",
+                    "null"
+                  ]
+                },
+                "snapshotIntervalHours": {
+                  "description": "Number of hours between snapshots.",
+                  "enum": [
+                    6,
+                    8,
+                    12,
+                    24
+                  ],
+                  "type": [
+                    "integer",
+                    "null"
+                  ]
+                },
+                "snapshotRetentionDays": {
+                  "description": "Number of days to keep recent snapshots.",
+                  "maximum": 365,
+                  "minimum": 1,
+                  "type": [
+                    "integer",
+                    "null"
+                  ]
+                },
+                "weeklySnapshotRetentionWeeks": {
+                  "description": "Number of weeks to retain weekly snapshots. Setting 0 will disable this rule",
+                  "maximum": 365,
+                  "minimum": 0,
+                  "type": [
+                    "integer",
+                    "null"
+                  ]
+                }
+              },
+              "type": [
+                "object",
+                "null"
+              ]
+            }
+          },
+          "type": [
+            "object",
+            "null"
+          ]
+        },
+        "cloudManager": {
+          "additionalProperties": false,
+          "properties": {
+            "configMapRef": {
+              "additionalProperties": false,
+              "properties": {
+                "name": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                }
+              },
+              "type": [
+                "object",
+                "null"
+              ]
+            }
+          },
+          "type": [
+            "object",
+            "null"
+          ]
+        },
+        "clusterDomain": {
+          "format": "hostname",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "clusterSpecList": {
+          "additionalProperties": false,
+          "description": "ClusterSpecList holds a list with a clusterSpec corresponding to each cluster",
+          "properties": {
+            "clusterSpecs": {
+              "items": {
+                "additionalProperties": false,
+                "description": "ClusterSpecItem is the mongodb multi-cluster spec that is specific to a particular Kubernetes cluster, this maps to the statefulset created in each cluster",
+                "properties": {
+                  "clusterName": {
+                    "description": "ClusterName is name of the cluster where the MongoDB Statefulset will be scheduled, the name should have a one on one mapping with the service-account created in the central cluster to talk to the workload clusters.",
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "exposedExternally": {
+                    "description": "ExposedExternally determines whether a NodePort service should be created for the resource",
+                    "type": [
+                      "boolean",
+                      "null"
+                    ]
+                  },
+                  "members": {
+                    "description": "Amount of members for this MongoDB Replica Set",
+                    "type": "integer"
+                  },
+                  "service": {
+                    "description": "this is an optional service, it will get the name \"\u003crsName\u003e-service\" in case not provided",
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "statefulSet": {
+                    "additionalProperties": false,
+                    "description": "StatefulSetConfiguration holds the optional custom StatefulSet that should be merged into the operator created one.",
+                    "properties": {
+                      "spec": {
+                        "type": "object",
+                        "x-kubernetes-preserve-unknown-fields": true
+                      }
+                    },
+                    "required": [
+                      "spec"
+                    ],
+                    "type": [
+                      "object",
+                      "null"
+                    ]
+                  }
+                },
+                "required": [
+                  "members"
+                ],
+                "type": "object"
+              },
+              "type": [
+                "array",
+                "null"
+              ]
+            }
+          },
+          "type": [
+            "object",
+            "null"
+          ]
+        },
+        "connectivity": {
+          "additionalProperties": false,
+          "properties": {
+            "replicaSetHorizons": {
+              "items": {
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "description": "MongoDBHorizonConfig holds a map of horizon names to the node addresses, e.g. {   \"internal\": \"my-rs-2.my-internal-domain.com:31843\",   \"external\": \"my-rs-2.my-external-domain.com:21467\" } The key of each item in the map is an arbitrary, user-chosen string that represents the name of the horizon. The value of the item is the host and, optionally, the port that this mongod node will be connected to from.",
+                "type": "object"
+              },
+              "type": [
+                "array",
+                "null"
+              ]
+            }
+          },
+          "type": [
+            "object",
+            "null"
+          ]
+        },
+        "credentials": {
+          "description": "Name of the Secret holding credentials information",
+          "type": "string"
+        },
+        "duplicateServiceObjects": {
+          "description": "In few service mesh options for ex: Istio, by default we would need to duplicate the service objects created per pod in all the clusters to enable DNS resolution. Users can however configure their ServiceMesh with DNS proxy(https://istio.io/latest/docs/ops/configuration/traffic-management/dns-proxy/) enabled in which case the operator doesn't need to create the service objects per cluster. This options tells the operator whether it should create the service objects in all the clusters or not. By default, if not specified the operator would create the duplicate svc objects.",
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "featureCompatibilityVersion": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "logLevel": {
+          "enum": [
+            "DEBUG",
+            "INFO",
+            "WARN",
+            "ERROR",
+            "FATAL"
+          ],
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "opsManager": {
+          "additionalProperties": false,
+          "properties": {
+            "configMapRef": {
+              "additionalProperties": false,
+              "properties": {
+                "name": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                }
+              },
+              "type": [
+                "object",
+                "null"
+              ]
+            }
+          },
+          "type": [
+            "object",
+            "null"
+          ]
+        },
+        "persistent": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "security": {
+          "additionalProperties": false,
+          "properties": {
+            "authentication": {
+              "additionalProperties": false,
+              "description": "Authentication holds various authentication related settings that affect this MongoDB resource.",
+              "properties": {
+                "agents": {
+                  "additionalProperties": false,
+                  "description": "Agents contains authentication configuration properties for the agents",
+                  "properties": {
+                    "automationLdapGroupDN": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "automationPasswordSecretRef": {
+                      "additionalProperties": false,
+                      "description": "SecretKeySelector selects a key of a Secret.",
+                      "properties": {
+                        "key": {
+                          "description": "The key of the secret to select from.  Must be a valid secret key.",
+                          "type": "string"
+                        },
+                        "name": {
+                          "description": "Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names TODO: Add other useful fields. apiVersion, kind, uid?",
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "optional": {
+                          "description": "Specify whether the Secret or its key must be defined",
+                          "type": [
+                            "boolean",
+                            "null"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "key"
+                      ],
+                      "type": [
+                        "object",
+                        "null"
+                      ],
+                      "x-kubernetes-map-type": "atomic"
+                    },
+                    "automationUserName": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "clientCertificateSecretRef": {
+                      "type": [
+                        "object",
+                        "null"
+                      ],
+                      "x-kubernetes-preserve-unknown-fields": true
+                    },
+                    "mode": {
+                      "description": "Mode is the desired Authentication mode that the agents will use",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "mode"
+                  ],
+                  "type": [
+                    "object",
+                    "null"
+                  ]
+                },
+                "enabled": {
+                  "type": "boolean"
+                },
+                "ignoreUnknownUsers": {
+                  "description": "IgnoreUnknownUsers maps to the inverse of auth.authoritativeSet",
+                  "type": [
+                    "boolean",
+                    "null"
+                  ]
+                },
+                "internalCluster": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "ldap": {
+                  "additionalProperties": false,
+                  "description": "LDAP Configuration",
+                  "properties": {
+                    "authzQueryTemplate": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "bindQueryPasswordSecretRef": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "name": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "name"
+                      ],
+                      "type": [
+                        "object",
+                        "null"
+                      ]
+                    },
+                    "bindQueryUser": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "caConfigMapRef": {
+                      "additionalProperties": false,
+                      "description": "Allows to point at a ConfigMap/key with a CA file to mount on the Pod",
+                      "properties": {
+                        "key": {
+                          "description": "The key to select.",
+                          "type": "string"
+                        },
+                        "name": {
+                          "description": "Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names TODO: Add other useful fields. apiVersion, kind, uid?",
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "optional": {
+                          "description": "Specify whether the ConfigMap or its key must be defined",
+                          "type": [
+                            "boolean",
+                            "null"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "key"
+                      ],
+                      "type": [
+                        "object",
+                        "null"
+                      ],
+                      "x-kubernetes-map-type": "atomic"
+                    },
+                    "servers": {
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": [
+                        "array",
+                        "null"
+                      ]
+                    },
+                    "timeoutMS": {
+                      "type": [
+                        "integer",
+                        "null"
+                      ]
+                    },
+                    "transportSecurity": {
+                      "enum": [
+                        "tls",
+                        "none"
+                      ],
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "userCacheInvalidationInterval": {
+                      "type": [
+                        "integer",
+                        "null"
+                      ]
+                    },
+                    "userToDNMapping": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "validateLDAPServerConfig": {
+                      "type": [
+                        "boolean",
+                        "null"
+                      ]
+                    }
+                  },
+                  "type": [
+                    "object",
+                    "null"
+                  ]
+                },
+                "modes": {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": [
+                    "array",
+                    "null"
+                  ]
+                },
+                "requireClientTLSAuthentication": {
+                  "description": "Clients should present valid TLS certificates",
+                  "type": [
+                    "boolean",
+                    "null"
+                  ]
+                }
+              },
+              "required": [
+                "enabled"
+              ],
+              "type": [
+                "object",
+                "null"
+              ]
+            },
+            "certsSecretPrefix": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "roles": {
+              "items": {
+                "additionalProperties": false,
+                "properties": {
+                  "authenticationRestrictions": {
+                    "items": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "clientSource": {
+                          "items": {
+                            "type": "string"
+                          },
+                          "type": [
+                            "array",
+                            "null"
+                          ]
+                        },
+                        "serverAddress": {
+                          "items": {
+                            "type": "string"
+                          },
+                          "type": [
+                            "array",
+                            "null"
+                          ]
+                        }
+                      },
+                      "type": "object"
+                    },
+                    "type": [
+                      "array",
+                      "null"
+                    ]
+                  },
+                  "db": {
+                    "type": "string"
+                  },
+                  "privileges": {
+                    "items": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "actions": {
+                          "items": {
+                            "type": "string"
+                          },
+                          "type": "array"
+                        },
+                        "resource": {
+                          "additionalProperties": false,
+                          "properties": {
+                            "cluster": {
+                              "type": [
+                                "boolean",
+                                "null"
+                              ]
+                            },
+                            "collection": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "db": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            }
+                          },
+                          "type": "object"
+                        }
+                      },
+                      "required": [
+                        "actions",
+                        "resource"
+                      ],
+                      "type": "object"
+                    },
+                    "type": [
+                      "array",
+                      "null"
+                    ]
+                  },
+                  "role": {
+                    "type": "string"
+                  },
+                  "roles": {
+                    "items": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "db": {
+                          "type": "string"
+                        },
+                        "role": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "db",
+                        "role"
+                      ],
+                      "type": "object"
+                    },
+                    "type": [
+                      "array",
+                      "null"
+                    ]
+                  }
+                },
+                "required": [
+                  "db",
+                  "role"
+                ],
+                "type": "object"
+              },
+              "type": [
+                "array",
+                "null"
+              ]
+            },
+            "tls": {
+              "additionalProperties": false,
+              "properties": {
+                "additionalCertificateDomains": {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": [
+                    "array",
+                    "null"
+                  ]
+                },
+                "ca": {
+                  "description": "CA corresponds to a ConfigMap containing an entry for the CA certificate (ca.pem) used to validate the certificates created already.",
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "enabled": {
+                  "description": "DEPRECATED please enable TLS by setting `security.certsSecretPrefix` or `security.tls.secretRef.prefix`. Enables TLS for this resource. This will make the operator try to mount a Secret with a defined name (\u003cresource-name\u003e-cert). This is only used when enabling TLS on a MongoDB resource, and not on the AppDB, where TLS is configured by setting `secretRef.Name`.",
+                  "type": [
+                    "boolean",
+                    "null"
+                  ]
+                }
+              },
+              "type": [
+                "object",
+                "null"
+              ]
+            }
+          },
+          "type": [
+            "object",
+            "null"
+          ]
+        },
+        "statefulSet": {
+          "additionalProperties": false,
+          "description": "StatefulSetConfiguration provides the statefulset override for each of the cluster's statefulset if  \"StatefulSetConfiguration\" is specified at cluster level under \"clusterSpecList\" that takes precedence over the global one",
+          "properties": {
+            "spec": {
+              "type": "object",
+              "x-kubernetes-preserve-unknown-fields": true
+            }
+          },
+          "required": [
+            "spec"
+          ],
+          "type": [
+            "object",
+            "null"
+          ]
+        },
+        "type": {
+          "enum": [
+            "ReplicaSet"
+          ],
+          "type": "string"
+        },
+        "version": {
+          "pattern": "^[0-9]+.[0-9]+.[0-9]+(-.+)?$|^$",
+          "type": "string"
+        }
+      },
+      "required": [
+        "credentials",
+        "type",
+        "version"
+      ],
+      "type": "object"
+    },
+    "status": {
+      "additionalProperties": false,
+      "properties": {
+        "backup": {
+          "additionalProperties": false,
+          "properties": {
+            "statusName": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "statusName"
+          ],
+          "type": [
+            "object",
+            "null"
+          ]
+        },
+        "clusterStatusList": {
+          "additionalProperties": false,
+          "description": "ClusterStatusList holds a list of clusterStatuses corresponding to each cluster",
+          "properties": {
+            "clusterStatuses": {
+              "items": {
+                "additionalProperties": false,
+                "description": "ClusterStatusItem is the mongodb multi-cluster spec that is specific to a particular Kubernetes cluster, this maps to the statefulset created in each cluster",
+                "properties": {
+                  "clusterName": {
+                    "description": "ClusterName is name of the cluster where the MongoDB Statefulset will be scheduled, the name should have a one on one mapping with the service-account created in the central cluster to talk to the workload clusters.",
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "lastTransition": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "members": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ]
+                  },
+                  "message": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "observedGeneration": {
+                    "format": "int64",
+                    "type": [
+                      "integer",
+                      "null"
+                    ]
+                  },
+                  "phase": {
+                    "type": "string"
+                  },
+                  "resourcesNotReady": {
+                    "items": {
+                      "additionalProperties": false,
+                      "description": "ResourceNotReady describes the dependent resource which is not ready yet",
+                      "properties": {
+                        "errors": {
+                          "items": {
+                            "additionalProperties": false,
+                            "properties": {
+                              "message": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "reason": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              }
+                            },
+                            "type": "object"
+                          },
+                          "type": [
+                            "array",
+                            "null"
+                          ]
+                        },
+                        "kind": {
+                          "description": "ResourceKind specifies a kind of a Kubernetes resource. Used in status of a Custom Resource",
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "name": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "kind",
+                        "name"
+                      ],
+                      "type": "object"
+                    },
+                    "type": [
+                      "array",
+                      "null"
+                    ]
+                  },
+                  "warnings": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": [
+                      "array",
+                      "null"
+                    ]
+                  }
+                },
+                "required": [
+                  "phase"
+                ],
+                "type": "object"
+              },
+              "type": [
+                "array",
+                "null"
+              ]
+            }
+          },
+          "type": [
+            "object",
+            "null"
+          ]
+        },
+        "lastTransition": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "link": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "message": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "observedGeneration": {
+          "format": "int64",
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "phase": {
+          "type": "string"
+        },
+        "resourcesNotReady": {
+          "items": {
+            "additionalProperties": false,
+            "description": "ResourceNotReady describes the dependent resource which is not ready yet",
+            "properties": {
+              "errors": {
+                "items": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "message": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "reason": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    }
+                  },
+                  "type": "object"
+                },
+                "type": [
+                  "array",
+                  "null"
+                ]
+              },
+              "kind": {
+                "description": "ResourceKind specifies a kind of a Kubernetes resource. Used in status of a Custom Resource",
+                "type": "string"
+              },
+              "message": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "name": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "kind",
+              "name"
+            ],
+            "type": "object"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "version": {
+          "type": "string"
+        },
+        "warnings": {
+          "items": {
+            "type": "string"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "phase",
+        "version"
+      ],
+      "type": [
+        "object",
+        "null"
+      ]
+    }
+  },
+  "required": [
+    "spec"
+  ],
+  "type": "object"
+}

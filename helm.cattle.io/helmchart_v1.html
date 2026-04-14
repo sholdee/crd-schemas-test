@@ -1,0 +1,1122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Helmchart v1 — helm.cattle.io</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<style>
+  :root {
+    --bg: #09090b;
+    --bg-surface: rgba(24, 24, 27, 0.6);
+    --bg-hover: rgba(24, 24, 27, 0.8);
+    --fg: #fafafa;
+    --fg-muted: #a1a1aa;
+    --accent: #6bc1fe;
+    --accent-dim: rgba(107, 193, 254, 0.15);
+    --border: rgba(255, 255, 255, 0.1);
+    --border-active: #6bc1fe;
+    --stat-fg: #fafafa;
+    --required-bg: rgba(251, 191, 36, 0.15);
+    --required-fg: #fbbf24;
+    --stripes-dark: repeating-linear-gradient(100deg, #000 0%, #000 7%, transparent 10%, transparent 12%, #000 16%);
+    --rainbow: repeating-linear-gradient(100deg, #fff 10%, #fff 16%, #fff 22%, #fff 30%);
+  }
+  .light {
+    --bg: #f5f7fa;
+    --bg-surface: #ffffff;
+    --bg-hover: #edf0f4;
+    --fg: #18181b;
+    --fg-muted: #6b7785;
+    --accent: #2563b0;
+    --accent-dim: rgba(37, 99, 176, 0.08);
+    --border: #d8dde4;
+    --border-active: #2563b0;
+    --stat-fg: #18181b;
+    --required-bg: rgba(217, 119, 6, 0.1);
+    --required-fg: #b45309;
+    --stripes-dark: none;
+    --rainbow: none;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg); color: var(--fg);
+    max-width: 920px; margin: 0 auto; padding: 2.5rem 1.25rem;
+    position: relative; z-index: 1;
+    transition: background 0.2s, color 0.2s;
+  }
+  body::before {
+    content: '';
+    position: fixed; inset: 0; z-index: -2;
+    pointer-events: none;
+    background-image:
+      radial-gradient(1.5px 1.5px at 31px 47px, rgba(255,255,255,1), transparent),
+      radial-gradient(1px 1px at 212px 23px, rgba(255,255,255,0.7), transparent),
+      radial-gradient(1.5px 1.5px at 68px 289px, rgba(255,255,255,0.84), transparent),
+      radial-gradient(1px 1px at 313px 151px, rgba(255,255,255,0.56), transparent),
+      radial-gradient(1px 1px at 157px 371px, rgba(255,255,255,0.6), transparent),
+      radial-gradient(2px 2px at 19px 83px, rgba(255,255,255,0.96), transparent),
+      radial-gradient(1px 1px at 301px 41px, rgba(255,255,255,0.6), transparent),
+      radial-gradient(1.5px 1.5px at 127px 409px, rgba(255,255,255,0.8), transparent),
+      radial-gradient(1px 1px at 443px 237px, rgba(255,255,255,0.5), transparent),
+      radial-gradient(1.5px 1.5px at 67px 491px, rgba(255,255,255,0.72), transparent),
+      radial-gradient(1px 1px at 11px 37px, rgba(255,255,255,0.72), transparent),
+      radial-gradient(1.5px 1.5px at 191px 213px, rgba(255,255,255,0.9), transparent),
+      radial-gradient(1px 1px at 53px 7px, rgba(255,255,255,0.5), transparent),
+      radial-gradient(1px 1px at 271px 103px, rgba(255,255,255,0.64), transparent);
+    background-size:
+      397px 397px, 397px 397px, 397px 397px, 397px 397px, 397px 397px,
+      509px 509px, 509px 509px, 509px 509px, 509px 509px, 509px 509px,
+      311px 311px, 311px 311px, 311px 311px, 311px 311px;
+    mask-image: linear-gradient(to bottom, black 0%, rgba(0,0,0,0.35) 45%, transparent 80%);
+    -webkit-mask-image: linear-gradient(to bottom, black 0%, rgba(0,0,0,0.35) 45%, transparent 80%);
+  }
+  .flare {
+    position: fixed; top: 0; right: 0;
+    width: 100vw; height: 450px; z-index: -1;
+    pointer-events: none;
+    background-image: var(--stripes-dark), var(--rainbow);
+    background-size: 300% 200%;
+    background-position: 50% 50%;
+    filter: opacity(50%) saturate(200%);
+    opacity: 0.25;
+    mask-image: radial-gradient(ellipse at 100% 0%, black 40%, transparent 70%);
+    -webkit-mask-image: radial-gradient(ellipse at 100% 0%, black 40%, transparent 70%);
+  }
+  .flare::after {
+    content: '';
+    position: absolute; inset: 0;
+    background-image: var(--stripes-dark), var(--rainbow);
+    background-size: 200% 100%;
+    background-attachment: fixed;
+    mix-blend-mode: difference;
+  }
+  .light body::before, .light .flare { display: none; }
+  .theme-toggle {
+    background: none; border: 1px solid var(--border); border-radius: 6px;
+    color: var(--fg-muted); cursor: pointer; padding: 0.35rem 0.6rem; font-size: 0.85rem;
+    transition: border-color 0.2s, color 0.2s;
+  }
+  .theme-toggle:hover { border-color: var(--accent); color: var(--accent); }
+  .copied-toast {
+    position: fixed; bottom: 1.5rem; left: 50%; transform: translateX(-50%);
+    background: var(--accent); color: #09090b; padding: 0.4rem 1rem;
+    border-radius: 6px; font-size: 0.8rem; font-weight: 600;
+    opacity: 0; transition: opacity 0.2s;
+    pointer-events: none; z-index: 10;
+  }
+  .copied-toast.show { opacity: 1; }
+  footer {
+    margin-top: 3rem; padding-top: 1.5rem;
+    border-top: 1px solid var(--border);
+    text-align: center; font-size: 0.8rem; color: var(--fg-muted);
+  }
+  footer a { color: var(--accent); text-decoration: none; }
+  footer a:hover { text-decoration: underline; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  .nav-row {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 1.5rem;
+  }
+  .back-link { font-size: 0.85rem; display: flex; align-items: center; gap: 0.4rem; }
+  .back-link kbd {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-size: 0.6rem; color: var(--fg-muted); background: var(--bg-surface);
+    border: 1px solid var(--border); border-radius: 4px;
+    padding: 0.1rem 0.35rem; line-height: 1;
+  }
+  .meta-cards {
+    display: flex; gap: 0.75rem; margin-bottom: 1.25rem; flex-wrap: wrap;
+  }
+  .meta-card {
+    background: var(--bg-surface); border: 1px solid var(--border);
+    border-radius: 6px; padding: 0.5rem 1rem;
+  }
+  .meta-card .label { font-size: 0.7rem; color: var(--fg-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+  .meta-card .value { font-size: 1rem; font-weight: 600; }
+  .yaml-block {
+    background: var(--bg-surface); border: 1px solid var(--border);
+    border-radius: 6px; padding: 0.75rem 1rem; margin-bottom: 1.5rem;
+    font-family: "SF Mono", "Fira Code", "Cascadia Code", monospace;
+    font-size: 0.8rem; white-space: pre; overflow-x: auto; color: var(--fg);
+  }
+  .toolbar {
+    display: flex; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap;
+    align-items: center; justify-content: space-between;
+  }
+  .toolbar-left { display: flex; gap: 0.75rem; }
+  .toolbar button, .toolbar a {
+    background: none; border: none; color: var(--fg-muted); cursor: pointer;
+    font-size: 0.8rem; padding: 0.2rem 0; transition: color 0.15s;
+  }
+  .toolbar button:hover, .toolbar a:hover { color: var(--accent); text-decoration: underline; }
+  .prop {
+    border: 1px solid var(--border); border-radius: 6px;
+    margin-bottom: 0.35rem; transition: border-color 0.2s;
+  }
+  .prop[open] { border-color: var(--border-active); border-left-width: 2px; }
+  .prop > summary {
+    padding: 0.5rem 0.75rem; cursor: pointer;
+    font-size: 0.85rem; background: var(--bg-surface); border-radius: 6px;
+    list-style: none; display: flex; align-items: center; gap: 0.5rem;
+    transition: background 0.15s;
+  }
+  .prop > summary::-webkit-details-marker { display: none; }
+  .prop > summary::before { content: "\25B8"; color: var(--fg-muted); font-size: 0.7rem; }
+  .prop[open] > summary::before { content: "\25BE"; color: var(--accent); }
+  .prop > summary:hover { background: var(--bg-hover); }
+  .prop-content { padding: 0.5rem 0.75rem 0.75rem; padding-left: 1.5rem; }
+  .prop-leaf {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.85rem; display: flex; align-items: flex-start; gap: 0.5rem;
+    border: 1px solid var(--border); border-radius: 6px;
+    margin-bottom: 0.35rem; background: var(--bg-surface);
+  }
+  .prop-leaf .prop-name { min-width: 0; }
+  .prop-name {
+    font-family: "SF Mono", "Fira Code", "Cascadia Code", monospace;
+    color: var(--accent); font-weight: 600; white-space: nowrap;
+  }
+  .type-badge {
+    background: var(--accent-dim); color: var(--accent);
+    font-size: 0.65rem; font-weight: 700; padding: 0.1rem 0.4rem;
+    border-radius: 8px; white-space: nowrap;
+  }
+  .required-badge {
+    background: var(--required-bg); color: var(--required-fg);
+    font-size: 0.65rem; font-weight: 700; padding: 0.1rem 0.4rem;
+    border-radius: 8px; white-space: nowrap;
+  }
+  .prop-desc { color: var(--fg-muted); font-size: 0.82rem; margin-top: 0.25rem; }
+  .prop-constraints {
+    color: var(--fg-muted); font-size: 0.75rem; margin-top: 0.2rem;
+    font-family: "SF Mono", "Fira Code", "Cascadia Code", monospace;
+  }
+  .prop-children { margin-top: 0.5rem; }
+  .leaf-desc { color: var(--fg-muted); font-size: 0.82rem; flex: 1; min-width: 0; }
+  .leaf-constraints {
+    color: var(--fg-muted); font-size: 0.75rem; margin-top: 0.15rem;
+    font-family: "SF Mono", "Fira Code", "Cascadia Code", monospace;
+  }
+</style>
+<script>if(localStorage.getItem('theme')==='light')document.documentElement.className='light';</script>
+</head>
+<body>
+<div class="flare"></div>
+<div class="nav-row">
+  <a href="/" class="back-link">← Back to index <kbd>Esc</kbd></a>
+  <button class="theme-toggle" onclick="toggleTheme()" title="Toggle light/dark mode">☀/☾</button>
+</div>
+<div class="meta-cards">
+  <div class="meta-card"><div class="label">Kind</div><div class="value">Helmchart</div></div>
+  <div class="meta-card"><div class="label">Group</div><div class="value">helm.cattle.io</div></div>
+  <div class="meta-card"><div class="label">Version</div><div class="value">v1</div></div>
+</div>
+<div class="yaml-block">apiVersion: helm.cattle.io/v1
+kind: Helmchart
+metadata:
+  name: example</div>
+<div class="toolbar">
+  <div class="toolbar-left">
+    <button id="expand-all">Expand all</button>
+    <button id="collapse-all">Collapse all</button>
+  </div>
+  <div class="toolbar-left">
+    <a href="/helm.cattle.io/helmchart_v1.json" target="_blank">View raw schema</a>
+    <button id="copy-url" data-url="/helm.cattle.io/helmchart_v1.json">Copy schema URL</button>
+  </div>
+</div>
+<div id="properties">
+<div class="prop-leaf">
+  <span class="prop-name">apiVersion</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">APIVersion defines the versioned schema of this representation of an object.
+Servers should convert recognized schemas to the latest internal value, and
+may reject unrecognized values.
+More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">kind</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">Kind is a string value representing the REST resource this object represents.
+Servers may infer this from the endpoint the client submits requests to.
+Cannot be updated.
+In CamelCase.
+More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">metadata</span>
+  <span class="type-badge">object</span>
+  <div class="leaf-desc">
+  </div>
+</div>
+<details class="prop">
+<summary>
+  <span class="prop-name">spec</span>
+  <span class="type-badge">object</span>
+</summary>
+<div class="prop-content"><div class="prop-desc">HelmChartSpec represents the user-configurable details for installation and upgrade of a Helm chart release.</div>
+  <div class="prop-children">
+<div class="prop-leaf">
+  <span class="prop-name">authPassCredentials</span>
+  <span class="type-badge">boolean</span>
+  <div class="leaf-desc">Pass Basic auth credentials to all domains.
+Helm CLI positional argument/flag: `--pass-credentials`
+  </div>
+</div>
+<details class="prop">
+<summary>
+  <span class="prop-name">authSecret</span>
+  <span class="type-badge">object</span>
+</summary>
+<div class="prop-content"><div class="prop-desc">Reference to Secret of type kubernetes.io/basic-auth holding Basic auth credentials for the Chart repo.</div>
+  <div class="prop-children">
+<div class="prop-leaf">
+  <span class="prop-name">name</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+  </div>
+</div>
+  </div>
+</div>
+</details>
+<div class="prop-leaf">
+  <span class="prop-name">backOffLimit</span>
+  <span class="type-badge">integer</span>
+  <div class="leaf-desc">Specify the number of retries before considering the helm job failed.<div class="leaf-constraints">format: int32</div>
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">bootstrap</span>
+  <span class="type-badge">boolean</span>
+  <div class="leaf-desc">Set to True if this chart is needed to bootstrap the cluster (Cloud Controller Manager, CNI, etc).
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">chart</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">Helm Chart name in repository, or complete HTTPS URL to chart archive (.tgz)
+Helm CLI positional argument/flag: `CHART`
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">chartContent</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">Base64-encoded chart archive .tgz; overides `.spec.chart` and `.spec.version`.
+Helm CLI positional argument/flag: `CHART`
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">createNamespace</span>
+  <span class="type-badge">boolean</span>
+  <div class="leaf-desc">Create target namespace if not present.
+Helm CLI positional argument/flag: `--create-namespace`
+  </div>
+</div>
+<details class="prop">
+<summary>
+  <span class="prop-name">dockerRegistrySecret</span>
+  <span class="type-badge">object</span>
+</summary>
+<div class="prop-content"><div class="prop-desc">Reference to Secret of type kubernetes.io/dockerconfigjson holding Docker auth credentials for the OCI-based registry acting as the Chart repo.</div>
+  <div class="prop-children">
+<div class="prop-leaf">
+  <span class="prop-name">name</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+  </div>
+</div>
+  </div>
+</div>
+</details>
+<div class="prop-leaf">
+  <span class="prop-name">failurePolicy</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">Configures handling of failed chart installation or upgrades.
+- `reinstall` will perform a clean uninstall and reinstall of the chart.
+- `abort` will take no action and leave the chart in a failed state so that the administrator can manually resolve the error.<div class="leaf-constraints">enum: abort, reinstall</div>
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">helmVersion</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">DEPRECATED. Helm version to use. Only v3 is currently supported.
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">insecureSkipTLSVerify</span>
+  <span class="type-badge">boolean</span>
+  <div class="leaf-desc">Skip TLS certificate checks for the chart download.
+Helm CLI positional argument/flag: `--insecure-skip-tls-verify`
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">jobImage</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">Specify the image to use for tht helm job pod when installing or upgrading the helm chart.
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">plainHTTP</span>
+  <span class="type-badge">boolean</span>
+  <div class="leaf-desc">Use insecure HTTP connections for the chart download.
+Helm CLI positional argument/flag: `--plain-http`
+  </div>
+</div>
+<details class="prop">
+<summary>
+  <span class="prop-name">podSecurityContext</span>
+  <span class="type-badge">object</span>
+</summary>
+<div class="prop-content"><div class="prop-desc">Custom PodSecurityContext for the helm job pod.</div>
+  <div class="prop-children">
+<details class="prop">
+<summary>
+  <span class="prop-name">appArmorProfile</span>
+  <span class="type-badge">object</span>
+</summary>
+<div class="prop-content"><div class="prop-desc">appArmorProfile is the AppArmor options to use by the containers in this pod.
+Note that this field cannot be set when spec.os.name is windows.</div>
+  <div class="prop-children">
+<div class="prop-leaf">
+  <span class="prop-name">localhostProfile</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">localhostProfile indicates a profile loaded on the node that should be used.
+The profile must be preconfigured on the node to work.
+Must match the loaded name of the profile.
+Must be set if and only if type is &#34;Localhost&#34;.
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">type</span>
+  <span class="type-badge">string</span> <span class="required-badge">required</span>
+  <div class="leaf-desc">type indicates which kind of AppArmor profile will be applied.
+Valid options are:
+  Localhost - a profile pre-loaded on the node.
+  RuntimeDefault - the container runtime&#39;s default profile.
+  Unconfined - no AppArmor enforcement.
+  </div>
+</div>
+  </div>
+</div>
+</details>
+<div class="prop-leaf">
+  <span class="prop-name">fsGroup</span>
+  <span class="type-badge">integer</span>
+  <div class="leaf-desc">A special supplemental group that applies to all containers in a pod.
+Some volume types allow the Kubelet to change the ownership of that volume
+to be owned by the pod:
+
+1. The owning GID will be the FSGroup
+2. The setgid bit is set (new files created in the volume will be owned by FSGroup)
+3. The permission bits are OR&#39;d with rw-rw----
+
+If unset, the Kubelet will not modify the ownership and permissions of any volume.
+Note that this field cannot be set when spec.os.name is windows.<div class="leaf-constraints">format: int64</div>
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">fsGroupChangePolicy</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">fsGroupChangePolicy defines behavior of changing ownership and permission of the volume
+before being exposed inside Pod. This field will only apply to
+volume types which support fsGroup based ownership(and permissions).
+It will have no effect on ephemeral volume types such as: secret, configmaps
+and emptydir.
+Valid values are &#34;OnRootMismatch&#34; and &#34;Always&#34;. If not specified, &#34;Always&#34; is used.
+Note that this field cannot be set when spec.os.name is windows.
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">runAsGroup</span>
+  <span class="type-badge">integer</span>
+  <div class="leaf-desc">The GID to run the entrypoint of the container process.
+Uses runtime default if unset.
+May also be set in SecurityContext.  If set in both SecurityContext and
+PodSecurityContext, the value specified in SecurityContext takes precedence
+for that container.
+Note that this field cannot be set when spec.os.name is windows.<div class="leaf-constraints">format: int64</div>
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">runAsNonRoot</span>
+  <span class="type-badge">boolean</span>
+  <div class="leaf-desc">Indicates that the container must run as a non-root user.
+If true, the Kubelet will validate the image at runtime to ensure that it
+does not run as UID 0 (root) and fail to start the container if it does.
+If unset or false, no such validation will be performed.
+May also be set in SecurityContext.  If set in both SecurityContext and
+PodSecurityContext, the value specified in SecurityContext takes precedence.
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">runAsUser</span>
+  <span class="type-badge">integer</span>
+  <div class="leaf-desc">The UID to run the entrypoint of the container process.
+Defaults to user specified in image metadata if unspecified.
+May also be set in SecurityContext.  If set in both SecurityContext and
+PodSecurityContext, the value specified in SecurityContext takes precedence
+for that container.
+Note that this field cannot be set when spec.os.name is windows.<div class="leaf-constraints">format: int64</div>
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">seLinuxChangePolicy</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">seLinuxChangePolicy defines how the container&#39;s SELinux label is applied to all volumes used by the Pod.
+It has no effect on nodes that do not support SELinux or to volumes does not support SELinux.
+Valid values are &#34;MountOption&#34; and &#34;Recursive&#34;.
+
+&#34;Recursive&#34; means relabeling of all files on all Pod volumes by the container runtime.
+This may be slow for large volumes, but allows mixing privileged and unprivileged Pods sharing the same volume on the same node.
+
+&#34;MountOption&#34; mounts all eligible Pod volumes with `-o context` mount option.
+This requires all Pods that share the same volume to use the same SELinux label.
+It is not possible to share the same volume among privileged and unprivileged Pods.
+Eligible volumes are in-tree FibreChannel and iSCSI volumes, and all CSI volumes
+whose CSI driver announces SELinux support by setting spec.seLinuxMount: true in their
+CSIDriver instance. Other volumes are always re-labelled recursively.
+&#34;MountOption&#34; value is allowed only when SELinuxMount feature gate is enabled.
+
+If not specified and SELinuxMount feature gate is enabled, &#34;MountOption&#34; is used.
+If not specified and SELinuxMount feature gate is disabled, &#34;MountOption&#34; is used for ReadWriteOncePod volumes
+and &#34;Recursive&#34; for all other volumes.
+
+This field affects only Pods that have SELinux label set, either in PodSecurityContext or in SecurityContext of all containers.
+
+All Pods that use the same volume should use the same seLinuxChangePolicy, otherwise some pods can get stuck in ContainerCreating state.
+Note that this field cannot be set when spec.os.name is windows.
+  </div>
+</div>
+<details class="prop">
+<summary>
+  <span class="prop-name">seLinuxOptions</span>
+  <span class="type-badge">object</span>
+</summary>
+<div class="prop-content"><div class="prop-desc">The SELinux context to be applied to all containers.
+If unspecified, the container runtime will allocate a random SELinux context for each
+container.  May also be set in SecurityContext.  If set in
+both SecurityContext and PodSecurityContext, the value specified in SecurityContext
+takes precedence for that container.
+Note that this field cannot be set when spec.os.name is windows.</div>
+  <div class="prop-children">
+<div class="prop-leaf">
+  <span class="prop-name">level</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">Level is SELinux level label that applies to the container.
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">role</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">Role is a SELinux role label that applies to the container.
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">type</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">Type is a SELinux type label that applies to the container.
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">user</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">User is a SELinux user label that applies to the container.
+  </div>
+</div>
+  </div>
+</div>
+</details>
+<details class="prop">
+<summary>
+  <span class="prop-name">seccompProfile</span>
+  <span class="type-badge">object</span>
+</summary>
+<div class="prop-content"><div class="prop-desc">The seccomp options to use by the containers in this pod.
+Note that this field cannot be set when spec.os.name is windows.</div>
+  <div class="prop-children">
+<div class="prop-leaf">
+  <span class="prop-name">localhostProfile</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">localhostProfile indicates a profile defined in a file on the node should be used.
+The profile must be preconfigured on the node to work.
+Must be a descending path, relative to the kubelet&#39;s configured seccomp profile location.
+Must be set if type is &#34;Localhost&#34;. Must NOT be set for any other type.
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">type</span>
+  <span class="type-badge">string</span> <span class="required-badge">required</span>
+  <div class="leaf-desc">type indicates which kind of seccomp profile will be applied.
+Valid options are:
+
+Localhost - a profile defined in a file on the node should be used.
+RuntimeDefault - the container runtime default profile should be used.
+Unconfined - no profile should be applied.
+  </div>
+</div>
+  </div>
+</div>
+</details>
+<div class="prop-leaf">
+  <span class="prop-name">supplementalGroups</span>
+  <span class="type-badge">[]integer</span>
+  <div class="leaf-desc">A list of groups applied to the first process run in each container, in
+addition to the container&#39;s primary GID and fsGroup (if specified).  If
+the SupplementalGroupsPolicy feature is enabled, the
+supplementalGroupsPolicy field determines whether these are in addition
+to or instead of any group memberships defined in the container image.
+If unspecified, no additional groups are added, though group memberships
+defined in the container image may still be used, depending on the
+supplementalGroupsPolicy field.
+Note that this field cannot be set when spec.os.name is windows.
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">supplementalGroupsPolicy</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">Defines how supplemental groups of the first container processes are calculated.
+Valid values are &#34;Merge&#34; and &#34;Strict&#34;. If not specified, &#34;Merge&#34; is used.
+(Alpha) Using the field requires the SupplementalGroupsPolicy feature gate to be enabled
+and the container runtime must implement support for this feature.
+Note that this field cannot be set when spec.os.name is windows.
+  </div>
+</div>
+<details class="prop">
+<summary>
+  <span class="prop-name">sysctls</span>
+  <span class="type-badge">[]object</span>
+</summary>
+<div class="prop-content"><div class="prop-desc">Sysctls hold a list of namespaced sysctls used for the pod. Pods with unsupported
+sysctls (by the container runtime) might fail to launch.
+Note that this field cannot be set when spec.os.name is windows.</div>
+  <div class="prop-children">
+<div class="prop-leaf">
+  <span class="prop-name">name</span>
+  <span class="type-badge">string</span> <span class="required-badge">required</span>
+  <div class="leaf-desc">Name of a property to set
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">value</span>
+  <span class="type-badge">string</span> <span class="required-badge">required</span>
+  <div class="leaf-desc">Value of a property to set
+  </div>
+</div>
+  </div>
+</div>
+</details>
+<details class="prop">
+<summary>
+  <span class="prop-name">windowsOptions</span>
+  <span class="type-badge">object</span>
+</summary>
+<div class="prop-content"><div class="prop-desc">The Windows specific settings applied to all containers.
+If unspecified, the options within a container&#39;s SecurityContext will be used.
+If set in both SecurityContext and PodSecurityContext, the value specified in SecurityContext takes precedence.
+Note that this field cannot be set when spec.os.name is linux.</div>
+  <div class="prop-children">
+<div class="prop-leaf">
+  <span class="prop-name">gmsaCredentialSpec</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">GMSACredentialSpec is where the GMSA admission webhook
+(https://github.com/kubernetes-sigs/windows-gmsa) inlines the contents of the
+GMSA credential spec named by the GMSACredentialSpecName field.
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">gmsaCredentialSpecName</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">GMSACredentialSpecName is the name of the GMSA credential spec to use.
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">hostProcess</span>
+  <span class="type-badge">boolean</span>
+  <div class="leaf-desc">HostProcess determines if a container should be run as a &#39;Host Process&#39; container.
+All of a Pod&#39;s containers must have the same effective HostProcess value
+(it is not allowed to have a mix of HostProcess containers and non-HostProcess containers).
+In addition, if HostProcess is true then HostNetwork must also be set to true.
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">runAsUserName</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">The UserName in Windows to run the entrypoint of the container process.
+Defaults to the user specified in image metadata if unspecified.
+May also be set in PodSecurityContext. If set in both SecurityContext and
+PodSecurityContext, the value specified in SecurityContext takes precedence.
+  </div>
+</div>
+  </div>
+</div>
+</details>
+  </div>
+</div>
+</details>
+<div class="prop-leaf">
+  <span class="prop-name">repo</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">Helm Chart repository URL.
+Helm CLI positional argument/flag: `--repo`
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">repoCA</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">Verify certificates of HTTPS-enabled servers using this CA bundle. Should be a string containing one or more PEM-encoded CA Certificates.
+Helm CLI positional argument/flag: `--ca-file`
+  </div>
+</div>
+<details class="prop">
+<summary>
+  <span class="prop-name">repoCAConfigMap</span>
+  <span class="type-badge">object</span>
+</summary>
+<div class="prop-content"><div class="prop-desc">Reference to a ConfigMap containing CA Certificates to be be trusted by Helm. Can be used along with or instead of `.spec.repoCA`
+Helm CLI positional argument/flag: `--ca-file`</div>
+  <div class="prop-children">
+<div class="prop-leaf">
+  <span class="prop-name">name</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+  </div>
+</div>
+  </div>
+</div>
+</details>
+<details class="prop">
+<summary>
+  <span class="prop-name">securityContext</span>
+  <span class="type-badge">object</span>
+</summary>
+<div class="prop-content"><div class="prop-desc">custom SecurityContext for the helm job pod.</div>
+  <div class="prop-children">
+<div class="prop-leaf">
+  <span class="prop-name">allowPrivilegeEscalation</span>
+  <span class="type-badge">boolean</span>
+  <div class="leaf-desc">AllowPrivilegeEscalation controls whether a process can gain more
+privileges than its parent process. This bool directly controls if
+the no_new_privs flag will be set on the container process.
+AllowPrivilegeEscalation is true always when the container is:
+1) run as Privileged
+2) has CAP_SYS_ADMIN
+Note that this field cannot be set when spec.os.name is windows.
+  </div>
+</div>
+<details class="prop">
+<summary>
+  <span class="prop-name">appArmorProfile</span>
+  <span class="type-badge">object</span>
+</summary>
+<div class="prop-content"><div class="prop-desc">appArmorProfile is the AppArmor options to use by this container. If set, this profile
+overrides the pod&#39;s appArmorProfile.
+Note that this field cannot be set when spec.os.name is windows.</div>
+  <div class="prop-children">
+<div class="prop-leaf">
+  <span class="prop-name">localhostProfile</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">localhostProfile indicates a profile loaded on the node that should be used.
+The profile must be preconfigured on the node to work.
+Must match the loaded name of the profile.
+Must be set if and only if type is &#34;Localhost&#34;.
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">type</span>
+  <span class="type-badge">string</span> <span class="required-badge">required</span>
+  <div class="leaf-desc">type indicates which kind of AppArmor profile will be applied.
+Valid options are:
+  Localhost - a profile pre-loaded on the node.
+  RuntimeDefault - the container runtime&#39;s default profile.
+  Unconfined - no AppArmor enforcement.
+  </div>
+</div>
+  </div>
+</div>
+</details>
+<details class="prop">
+<summary>
+  <span class="prop-name">capabilities</span>
+  <span class="type-badge">object</span>
+</summary>
+<div class="prop-content"><div class="prop-desc">The capabilities to add/drop when running containers.
+Defaults to the default set of capabilities granted by the container runtime.
+Note that this field cannot be set when spec.os.name is windows.</div>
+  <div class="prop-children">
+<div class="prop-leaf">
+  <span class="prop-name">add</span>
+  <span class="type-badge">[]string</span>
+  <div class="leaf-desc">Added capabilities
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">drop</span>
+  <span class="type-badge">[]string</span>
+  <div class="leaf-desc">Removed capabilities
+  </div>
+</div>
+  </div>
+</div>
+</details>
+<div class="prop-leaf">
+  <span class="prop-name">privileged</span>
+  <span class="type-badge">boolean</span>
+  <div class="leaf-desc">Run container in privileged mode.
+Processes in privileged containers are essentially equivalent to root on the host.
+Defaults to false.
+Note that this field cannot be set when spec.os.name is windows.
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">procMount</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">procMount denotes the type of proc mount to use for the containers.
+The default value is Default which uses the container runtime defaults for
+readonly paths and masked paths.
+This requires the ProcMountType feature flag to be enabled.
+Note that this field cannot be set when spec.os.name is windows.
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">readOnlyRootFilesystem</span>
+  <span class="type-badge">boolean</span>
+  <div class="leaf-desc">Whether this container has a read-only root filesystem.
+Default is false.
+Note that this field cannot be set when spec.os.name is windows.
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">runAsGroup</span>
+  <span class="type-badge">integer</span>
+  <div class="leaf-desc">The GID to run the entrypoint of the container process.
+Uses runtime default if unset.
+May also be set in PodSecurityContext.  If set in both SecurityContext and
+PodSecurityContext, the value specified in SecurityContext takes precedence.
+Note that this field cannot be set when spec.os.name is windows.<div class="leaf-constraints">format: int64</div>
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">runAsNonRoot</span>
+  <span class="type-badge">boolean</span>
+  <div class="leaf-desc">Indicates that the container must run as a non-root user.
+If true, the Kubelet will validate the image at runtime to ensure that it
+does not run as UID 0 (root) and fail to start the container if it does.
+If unset or false, no such validation will be performed.
+May also be set in PodSecurityContext.  If set in both SecurityContext and
+PodSecurityContext, the value specified in SecurityContext takes precedence.
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">runAsUser</span>
+  <span class="type-badge">integer</span>
+  <div class="leaf-desc">The UID to run the entrypoint of the container process.
+Defaults to user specified in image metadata if unspecified.
+May also be set in PodSecurityContext.  If set in both SecurityContext and
+PodSecurityContext, the value specified in SecurityContext takes precedence.
+Note that this field cannot be set when spec.os.name is windows.<div class="leaf-constraints">format: int64</div>
+  </div>
+</div>
+<details class="prop">
+<summary>
+  <span class="prop-name">seLinuxOptions</span>
+  <span class="type-badge">object</span>
+</summary>
+<div class="prop-content"><div class="prop-desc">The SELinux context to be applied to the container.
+If unspecified, the container runtime will allocate a random SELinux context for each
+container.  May also be set in PodSecurityContext.  If set in both SecurityContext and
+PodSecurityContext, the value specified in SecurityContext takes precedence.
+Note that this field cannot be set when spec.os.name is windows.</div>
+  <div class="prop-children">
+<div class="prop-leaf">
+  <span class="prop-name">level</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">Level is SELinux level label that applies to the container.
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">role</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">Role is a SELinux role label that applies to the container.
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">type</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">Type is a SELinux type label that applies to the container.
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">user</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">User is a SELinux user label that applies to the container.
+  </div>
+</div>
+  </div>
+</div>
+</details>
+<details class="prop">
+<summary>
+  <span class="prop-name">seccompProfile</span>
+  <span class="type-badge">object</span>
+</summary>
+<div class="prop-content"><div class="prop-desc">The seccomp options to use by this container. If seccomp options are
+provided at both the pod &amp; container level, the container options
+override the pod options.
+Note that this field cannot be set when spec.os.name is windows.</div>
+  <div class="prop-children">
+<div class="prop-leaf">
+  <span class="prop-name">localhostProfile</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">localhostProfile indicates a profile defined in a file on the node should be used.
+The profile must be preconfigured on the node to work.
+Must be a descending path, relative to the kubelet&#39;s configured seccomp profile location.
+Must be set if type is &#34;Localhost&#34;. Must NOT be set for any other type.
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">type</span>
+  <span class="type-badge">string</span> <span class="required-badge">required</span>
+  <div class="leaf-desc">type indicates which kind of seccomp profile will be applied.
+Valid options are:
+
+Localhost - a profile defined in a file on the node should be used.
+RuntimeDefault - the container runtime default profile should be used.
+Unconfined - no profile should be applied.
+  </div>
+</div>
+  </div>
+</div>
+</details>
+<details class="prop">
+<summary>
+  <span class="prop-name">windowsOptions</span>
+  <span class="type-badge">object</span>
+</summary>
+<div class="prop-content"><div class="prop-desc">The Windows specific settings applied to all containers.
+If unspecified, the options from the PodSecurityContext will be used.
+If set in both SecurityContext and PodSecurityContext, the value specified in SecurityContext takes precedence.
+Note that this field cannot be set when spec.os.name is linux.</div>
+  <div class="prop-children">
+<div class="prop-leaf">
+  <span class="prop-name">gmsaCredentialSpec</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">GMSACredentialSpec is where the GMSA admission webhook
+(https://github.com/kubernetes-sigs/windows-gmsa) inlines the contents of the
+GMSA credential spec named by the GMSACredentialSpecName field.
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">gmsaCredentialSpecName</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">GMSACredentialSpecName is the name of the GMSA credential spec to use.
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">hostProcess</span>
+  <span class="type-badge">boolean</span>
+  <div class="leaf-desc">HostProcess determines if a container should be run as a &#39;Host Process&#39; container.
+All of a Pod&#39;s containers must have the same effective HostProcess value
+(it is not allowed to have a mix of HostProcess containers and non-HostProcess containers).
+In addition, if HostProcess is true then HostNetwork must also be set to true.
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">runAsUserName</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">The UserName in Windows to run the entrypoint of the container process.
+Defaults to the user specified in image metadata if unspecified.
+May also be set in PodSecurityContext. If set in both SecurityContext and
+PodSecurityContext, the value specified in SecurityContext takes precedence.
+  </div>
+</div>
+  </div>
+</div>
+</details>
+  </div>
+</div>
+</details>
+<div class="prop-leaf">
+  <span class="prop-name">set</span>
+  <span class="type-badge">object</span>
+  <div class="leaf-desc">Override simple Chart values. These take precedence over options set via valuesContent.
+Helm CLI positional argument/flag: `--set`, `--set-string`
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">takeOwnership</span>
+  <span class="type-badge">boolean</span>
+  <div class="leaf-desc">Set to True if helm should take ownership of existing resources when installing/upgrading the chart.
+Helm CLI positional argument/flag: `--take-ownership`
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">targetNamespace</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">Helm Chart target namespace.
+Helm CLI positional argument/flag: `--namespace`
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">timeout</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">Timeout for Helm operations.
+Helm CLI positional argument/flag: `--timeout`
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">valuesContent</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">Override complex Chart values via inline YAML content.
+Helm CLI positional argument/flag: `--values`
+  </div>
+</div>
+<details class="prop">
+<summary>
+  <span class="prop-name">valuesSecrets</span>
+  <span class="type-badge">[]object</span>
+</summary>
+<div class="prop-content"><div class="prop-desc">Override complex Chart values via references to external Secrets.
+Helm CLI positional argument/flag: `--values`</div>
+  <div class="prop-children">
+<div class="prop-leaf">
+  <span class="prop-name">ignoreUpdates</span>
+  <span class="type-badge">boolean</span>
+  <div class="leaf-desc">Ignore changes to the secret, and mark the secret as optional.
+By default, the secret must exist, and changes to the secret will trigger an upgrade of the chart to apply the updated values.
+If `ignoreUpdates` is true, the secret is optional, and changes to the secret will not trigger an upgrade of the chart.
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">keys</span>
+  <span class="type-badge">[]string</span>
+  <div class="leaf-desc">Keys to read values content from. If no keys are specified, the secret is not used.
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">name</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">Name of the secret. Must be in the same namespace as the HelmChart resource.
+  </div>
+</div>
+  </div>
+</div>
+</details>
+<div class="prop-leaf">
+  <span class="prop-name">version</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">Helm Chart version. Only used when installing from repository; ignored when .spec.chart or .spec.chartContent is used to install a specific chart archive.
+Helm CLI positional argument/flag: `--version`
+  </div>
+</div>
+  </div>
+</div>
+</details>
+<details class="prop">
+<summary>
+  <span class="prop-name">status</span>
+  <span class="type-badge">object</span>
+</summary>
+<div class="prop-content"><div class="prop-desc">HelmChartStatus represents the resulting state from processing HelmChart events</div>
+  <div class="prop-children">
+<details class="prop">
+<summary>
+  <span class="prop-name">conditions</span>
+  <span class="type-badge">[]object</span>
+</summary>
+<div class="prop-content"><div class="prop-desc">`JobCreated` indicates that a job has been created to install or upgrade the chart.
+`Failed` indicates that the helm job has failed and the failure policy is set to `abort`.</div>
+  <div class="prop-children">
+<div class="prop-leaf">
+  <span class="prop-name">message</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">Human readable message indicating details about last transition.
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">reason</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">(brief) reason for the condition&#39;s last transition.
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">status</span>
+  <span class="type-badge">string</span> <span class="required-badge">required</span>
+  <div class="leaf-desc">Status of the condition, one of True, False, Unknown.
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">type</span>
+  <span class="type-badge">string</span> <span class="required-badge">required</span>
+  <div class="leaf-desc">Type of job condition.
+  </div>
+</div>
+  </div>
+</div>
+</details>
+<div class="prop-leaf">
+  <span class="prop-name">jobName</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">The name of the job created to install or upgrade the chart.
+  </div>
+</div>
+  </div>
+</div>
+</details>
+</div>
+<div class="copied-toast" id="toast">Copied!</div>
+<footer>
+  Generated by <a href="https://github.com/sholdee/crd-schema-publisher">crd-schema-publisher</a>
+</footer>
+<script>
+(function(){
+  var props = document.querySelectorAll('.prop');
+  document.getElementById('expand-all').addEventListener('click', function(){
+    props.forEach(function(p){ p.setAttribute('open',''); });
+  });
+  document.getElementById('collapse-all').addEventListener('click', function(){
+    props.forEach(function(p){ p.removeAttribute('open'); });
+  });
+  var toast = document.getElementById('toast');
+  var toastTimer;
+  document.addEventListener('keydown', function(e){
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      if (document.activeElement && document.activeElement !== document.body) {
+        document.activeElement.blur();
+      }
+      location.href = '/';
+    }
+  });
+  document.getElementById('copy-url').addEventListener('click', function(){
+    var url = location.origin + this.dataset.url;
+    navigator.clipboard.writeText(url).then(function(){
+      clearTimeout(toastTimer);
+      toast.classList.add('show');
+      toastTimer = setTimeout(function(){ toast.classList.remove('show'); }, 1500);
+    });
+  });
+})();
+function toggleTheme(){
+  document.documentElement.classList.toggle('light');
+  localStorage.setItem('theme', document.documentElement.classList.contains('light') ? 'light' : 'dark');
+}
+</script>
+</body>
+</html>
