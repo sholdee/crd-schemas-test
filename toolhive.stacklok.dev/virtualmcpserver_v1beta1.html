@@ -1,0 +1,2747 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VirtualMCPServer v1beta1 — toolhive.stacklok.dev</title>
+<link rel="icon" type="image/svg+xml" href="/crd-schemas-test/favicon.svg">
+<style>
+  :root {
+    --bg: #09090b;
+    --bg-surface: rgba(24, 24, 27, 0.6);
+    --bg-hover: rgba(24, 24, 27, 0.8);
+    --fg: #fafafa;
+    --fg-muted: #a1a1aa;
+    --accent: #6bc1fe;
+    --accent-dim: rgba(107, 193, 254, 0.15);
+    --border: rgba(255, 255, 255, 0.1);
+    --border-active: #6bc1fe;
+    --stat-fg: #fafafa;
+    --required-bg: rgba(251, 191, 36, 0.15);
+    --required-fg: #fbbf24;
+    --stripes-dark: repeating-linear-gradient(100deg, #000 0%, #000 7%, transparent 10%, transparent 12%, #000 16%);
+    --rainbow: repeating-linear-gradient(100deg, #fff 10%, #fff 16%, #fff 22%, #fff 30%);
+  }
+  .light {
+    --bg: #f5f7fa;
+    --bg-surface: #ffffff;
+    --bg-hover: #edf0f4;
+    --fg: #18181b;
+    --fg-muted: #6b7785;
+    --accent: #2563b0;
+    --accent-dim: rgba(37, 99, 176, 0.08);
+    --border: #d8dde4;
+    --border-active: #2563b0;
+    --stat-fg: #18181b;
+    --required-bg: rgba(217, 119, 6, 0.1);
+    --required-fg: #b45309;
+    --stripes-dark: none;
+    --rainbow: none;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg); color: var(--fg);
+    max-width: 920px; margin: 0 auto; padding: 2.5rem 1.25rem;
+    position: relative; z-index: 1;
+    transition: background 0.2s, color 0.2s;
+  }
+  body::before {
+    content: '';
+    position: fixed; inset: 0; z-index: -2;
+    pointer-events: none;
+    background-image:
+      radial-gradient(1.5px 1.5px at 31px 47px, rgba(255,255,255,1), transparent),
+      radial-gradient(1px 1px at 212px 23px, rgba(255,255,255,0.7), transparent),
+      radial-gradient(1.5px 1.5px at 68px 289px, rgba(255,255,255,0.84), transparent),
+      radial-gradient(1px 1px at 313px 151px, rgba(255,255,255,0.56), transparent),
+      radial-gradient(1px 1px at 157px 371px, rgba(255,255,255,0.6), transparent),
+      radial-gradient(2px 2px at 19px 83px, rgba(255,255,255,0.96), transparent),
+      radial-gradient(1px 1px at 301px 41px, rgba(255,255,255,0.6), transparent),
+      radial-gradient(1.5px 1.5px at 127px 409px, rgba(255,255,255,0.8), transparent),
+      radial-gradient(1px 1px at 443px 237px, rgba(255,255,255,0.5), transparent),
+      radial-gradient(1.5px 1.5px at 67px 491px, rgba(255,255,255,0.72), transparent),
+      radial-gradient(1px 1px at 11px 37px, rgba(255,255,255,0.72), transparent),
+      radial-gradient(1.5px 1.5px at 191px 213px, rgba(255,255,255,0.9), transparent),
+      radial-gradient(1px 1px at 53px 7px, rgba(255,255,255,0.5), transparent),
+      radial-gradient(1px 1px at 271px 103px, rgba(255,255,255,0.64), transparent);
+    background-size:
+      397px 397px, 397px 397px, 397px 397px, 397px 397px, 397px 397px,
+      509px 509px, 509px 509px, 509px 509px, 509px 509px, 509px 509px,
+      311px 311px, 311px 311px, 311px 311px, 311px 311px;
+    mask-image: linear-gradient(to bottom, black 0%, rgba(0,0,0,0.35) 45%, transparent 80%);
+    -webkit-mask-image: linear-gradient(to bottom, black 0%, rgba(0,0,0,0.35) 45%, transparent 80%);
+  }
+  .flare {
+    position: fixed; top: 0; right: 0;
+    width: 100vw; height: 450px; z-index: -1;
+    pointer-events: none;
+    background-image: var(--stripes-dark), var(--rainbow);
+    background-size: 300% 200%;
+    background-position: 50% 50%;
+    filter: opacity(50%) saturate(200%);
+    opacity: 0.25;
+    mask-image: radial-gradient(ellipse at 100% 0%, black 40%, transparent 70%);
+    -webkit-mask-image: radial-gradient(ellipse at 100% 0%, black 40%, transparent 70%);
+  }
+  .flare::after {
+    content: '';
+    position: absolute; inset: 0;
+    background-image: var(--stripes-dark), var(--rainbow);
+    background-size: 200% 100%;
+    background-attachment: fixed;
+    mix-blend-mode: difference;
+  }
+  .light body::before, .light .flare { display: none; }
+  .theme-toggle {
+    background: none; border: 1px solid var(--border); border-radius: 6px;
+    color: var(--fg-muted); cursor: pointer; padding: 0.35rem 0.6rem; font-size: 0.85rem;
+    transition: border-color 0.2s, color 0.2s;
+  }
+  .theme-toggle:hover { border-color: var(--accent); color: var(--accent); }
+  .copied-toast {
+    position: fixed; bottom: 1.5rem; left: 50%; transform: translateX(-50%);
+    background: var(--accent); color: #09090b; padding: 0.4rem 1rem;
+    border-radius: 6px; font-size: 0.8rem; font-weight: 600;
+    opacity: 0; transition: opacity 0.2s;
+    pointer-events: none; z-index: 10;
+  }
+  .copied-toast.show { opacity: 1; }
+  footer {
+    margin-top: 3rem; padding-top: 1.5rem;
+    border-top: 1px solid var(--border);
+    text-align: center; font-size: 0.8rem; color: var(--fg-muted);
+  }
+  footer a { color: var(--accent); text-decoration: none; }
+  footer a:hover { text-decoration: underline; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  .nav-row {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 1.5rem;
+  }
+  .back-link { font-size: 0.85rem; display: flex; align-items: center; gap: 0.4rem; }
+  .back-link kbd {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-size: 0.6rem; color: var(--fg-muted); background: var(--bg-surface);
+    border: 1px solid var(--border); border-radius: 4px;
+    padding: 0.1rem 0.35rem; line-height: 1;
+  }
+  .meta-cards {
+    display: flex; gap: 0.75rem; margin-bottom: 1.25rem; flex-wrap: wrap;
+  }
+  .meta-card {
+    background: var(--bg-surface); border: 1px solid var(--border);
+    border-radius: 6px; padding: 0.5rem 1rem;
+  }
+  .meta-card .label { font-size: 0.7rem; color: var(--fg-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+  .meta-card .value { font-size: 1rem; font-weight: 600; }
+  .yaml-block {
+    background: var(--bg-surface); border: 1px solid var(--border);
+    border-radius: 6px; padding: 0.75rem 1rem; margin-bottom: 1.5rem;
+    font-family: "SF Mono", "Fira Code", "Cascadia Code", monospace;
+    font-size: 0.8rem; white-space: pre; overflow-x: auto; color: var(--fg);
+  }
+  .toolbar {
+    display: flex; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap;
+    align-items: center; justify-content: space-between;
+  }
+  .toolbar-left { display: flex; gap: 0.75rem; }
+  .toolbar button, .toolbar a {
+    background: none; border: none; color: var(--fg-muted); cursor: pointer;
+    font-size: 0.8rem; padding: 0.2rem 0; transition: color 0.15s;
+  }
+  .toolbar button:hover, .toolbar a:hover { color: var(--accent); text-decoration: underline; }
+  .prop {
+    border: 1px solid var(--border); border-radius: 6px;
+    margin-bottom: 0.35rem; transition: border-color 0.2s;
+  }
+  .prop[open] { border-color: var(--border-active); border-left-width: 2px; }
+  .prop > summary {
+    padding: 0.5rem 0.75rem; cursor: pointer;
+    font-size: 0.85rem; background: var(--bg-surface); border-radius: 6px;
+    list-style: none; display: flex; align-items: center; gap: 0.5rem;
+    transition: background 0.15s;
+  }
+  .prop > summary::-webkit-details-marker { display: none; }
+  .prop > summary::before { content: "\25B8"; color: var(--fg-muted); font-size: 0.7rem; }
+  .prop[open] > summary::before { content: "\25BE"; color: var(--accent); }
+  .prop > summary:hover { background: var(--bg-hover); }
+  .prop-content { padding: 0.5rem 0.75rem 0.75rem; padding-left: 1.5rem; }
+  .prop-leaf {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.85rem; display: flex; align-items: flex-start; gap: 0.5rem;
+    border: 1px solid var(--border); border-radius: 6px;
+    margin-bottom: 0.35rem; background: var(--bg-surface);
+  }
+  .prop-leaf .prop-name { min-width: 0; }
+  .prop-name {
+    font-family: "SF Mono", "Fira Code", "Cascadia Code", monospace;
+    color: var(--accent); font-weight: 600; white-space: nowrap;
+  }
+  .type-badge {
+    background: var(--accent-dim); color: var(--accent);
+    font-size: 0.65rem; font-weight: 700; padding: 0.1rem 0.4rem;
+    border-radius: 8px; white-space: nowrap;
+  }
+  .required-badge {
+    background: var(--required-bg); color: var(--required-fg);
+    font-size: 0.65rem; font-weight: 700; padding: 0.1rem 0.4rem;
+    border-radius: 8px; white-space: nowrap;
+  }
+  .prop-desc { color: var(--fg-muted); font-size: 0.82rem; margin-top: 0.25rem; }
+  .prop-constraints {
+    color: var(--fg-muted); font-size: 0.75rem; margin-top: 0.2rem;
+    font-family: "SF Mono", "Fira Code", "Cascadia Code", monospace;
+  }
+  .prop-children { margin-top: 0.5rem; }
+  .leaf-desc { color: var(--fg-muted); font-size: 0.82rem; flex: 1; min-width: 0; }
+  .leaf-constraints {
+    color: var(--fg-muted); font-size: 0.75rem; margin-top: 0.15rem;
+    font-family: "SF Mono", "Fira Code", "Cascadia Code", monospace;
+  }
+</style>
+<script>if(localStorage.getItem('theme')==='light')document.documentElement.className='light';</script>
+</head>
+<body data-base-path="/crd-schemas-test">
+<div class="flare"></div>
+<div class="nav-row">
+  <a href="/crd-schemas-test/" class="back-link">← Back to index <kbd>Esc</kbd></a>
+  <button class="theme-toggle" onclick="toggleTheme()" title="Toggle light/dark mode">☀/☾</button>
+</div>
+<div class="meta-cards">
+  <div class="meta-card"><div class="label">Kind</div><div class="value">VirtualMCPServer</div></div>
+  <div class="meta-card"><div class="label">Group</div><div class="value">toolhive.stacklok.dev</div></div>
+  <div class="meta-card"><div class="label">Version</div><div class="value">v1beta1</div></div>
+</div>
+<div class="yaml-block">apiVersion: toolhive.stacklok.dev/v1beta1
+kind: VirtualMCPServer
+metadata:
+  name: example</div>
+<div class="toolbar">
+  <div class="toolbar-left">
+    <button id="expand-all">Expand all</button>
+    <button id="collapse-all">Collapse all</button>
+  </div>
+  <div class="toolbar-left">
+    <a href="/crd-schemas-test/toolhive.stacklok.dev/virtualmcpserver_v1beta1.json" target="_blank">View raw schema</a>
+    <button id="copy-url" data-url="/crd-schemas-test/toolhive.stacklok.dev/virtualmcpserver_v1beta1.json">Copy schema URL</button>
+  </div>
+</div>
+<div id="properties">
+<div class="prop-leaf">
+  <span class="prop-name">apiVersion</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">APIVersion defines the versioned schema of this representation of an object.
+Servers should convert recognized schemas to the latest internal value, and
+may reject unrecognized values.
+More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">kind</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">Kind is a string value representing the REST resource this object represents.
+Servers may infer this from the endpoint the client submits requests to.
+Cannot be updated.
+In CamelCase.
+More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">metadata</span>
+  <span class="type-badge">object</span>
+  <div class="leaf-desc">
+  </div>
+</div>
+<details class="prop">
+<summary>
+  <span class="prop-name">spec</span>
+  <span class="type-badge">object</span>
+</summary>
+<div class="prop-content"><div class="prop-desc">VirtualMCPServerSpec defines the desired state of VirtualMCPServer</div>
+  <div class="prop-children">
+<details class="prop">
+<summary>
+  <span class="prop-name">authServerConfig</span>
+  <span class="type-badge">object</span>
+</summary>
+<div class="prop-content"><div class="prop-desc">AuthServerConfig configures an embedded OAuth authorization server.
+When set, the vMCP server acts as an OIDC issuer, drives users through
+upstream IDPs, and issues ToolHive JWTs. The embedded AS becomes the
+IncomingAuth OIDC provider — its issuer must match IncomingAuth.OIDCConfigRef
+so that tokens it issues are accepted by the vMCP&#39;s incoming auth middleware.
+When nil, IncomingAuth uses an external IDP and behavior is unchanged.</div>
+  <div class="prop-children">
+<div class="prop-leaf">
+  <span class="prop-name">authorizationEndpointBaseUrl</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">AuthorizationEndpointBaseURL overrides the base URL used for the authorization_endpoint
+in the OAuth discovery document. When set, the discovery document will advertise
+`{authorizationEndpointBaseUrl}/oauth/authorize` instead of `{issuer}/oauth/authorize`.
+All other endpoints (token, registration, JWKS) remain derived from the issuer.
+This is useful when the browser-facing authorization endpoint needs to be on a
+different host than the issuer used for backend-to-backend calls.
+Must be a valid HTTPS URL (or HTTP for localhost) without query, fragment, or trailing slash.<div class="leaf-constraints">pattern: ^https?://[^\s?#]+[^/\s?#]$</div>
+  </div>
+</div>
+<details class="prop">
+<summary>
+  <span class="prop-name">hmacSecretRefs</span>
+  <span class="type-badge">[]object</span>
+</summary>
+<div class="prop-content"><div class="prop-desc">HMACSecretRefs references Kubernetes Secrets containing symmetric secrets for signing
+authorization codes and refresh tokens (opaque tokens).
+Current secret must be at least 32 bytes and cryptographically random.
+Supports secret rotation via multiple entries (first is current, rest are for verification).
+If not specified, an ephemeral secret will be auto-generated (development only -
+auth codes and refresh tokens will be invalid after restart).</div>
+  <div class="prop-children">
+<div class="prop-leaf">
+  <span class="prop-name">key</span>
+  <span class="type-badge">string</span> <span class="required-badge">required</span>
+  <div class="leaf-desc">Key is the key within the secret
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">name</span>
+  <span class="type-badge">string</span> <span class="required-badge">required</span>
+  <div class="leaf-desc">Name is the name of the secret
+  </div>
+</div>
+  </div>
+</div>
+</details>
+<div class="prop-leaf">
+  <span class="prop-name">issuer</span>
+  <span class="type-badge">string</span> <span class="required-badge">required</span>
+  <div class="leaf-desc">Issuer is the issuer identifier for this authorization server.
+This will be included in the &#34;iss&#34; claim of issued tokens.
+Must be a valid HTTPS URL (or HTTP for localhost) without query, fragment, or trailing slash (per RFC 8414).<div class="leaf-constraints">pattern: ^https?://[^\s?#]+[^/\s?#]$</div>
+  </div>
+</div>
+<details class="prop">
+<summary>
+  <span class="prop-name">signingKeySecretRefs</span>
+  <span class="type-badge">[]object</span>
+</summary>
+<div class="prop-content"><div class="prop-desc">SigningKeySecretRefs references Kubernetes Secrets containing signing keys for JWT operations.
+Supports key rotation by allowing multiple keys (oldest keys are used for verification only).
+If not specified, an ephemeral signing key will be auto-generated (development only -
+JWTs will be invalid after restart).</div><div class="prop-constraints">maxItems: 5</div>
+  <div class="prop-children">
+<div class="prop-leaf">
+  <span class="prop-name">key</span>
+  <span class="type-badge">string</span> <span class="required-badge">required</span>
+  <div class="leaf-desc">Key is the key within the secret
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">name</span>
+  <span class="type-badge">string</span> <span class="required-badge">required</span>
+  <div class="leaf-desc">Name is the name of the secret
+  </div>
+</div>
+  </div>
+</div>
+</details>
+<details class="prop">
+<summary>
+  <span class="prop-name">storage</span>
+  <span class="type-badge">object</span>
+</summary>
+<div class="prop-content"><div class="prop-desc">Storage configures the storage backend for the embedded auth server.
+If not specified, defaults to in-memory storage.</div>
+  <div class="prop-children">
+<details class="prop">
+<summary>
+  <span class="prop-name">redis</span>
+  <span class="type-badge">object</span>
+</summary>
+<div class="prop-content"><div class="prop-desc">Redis configures the Redis storage backend.
+Required when type is &#34;redis&#34;.</div>
+  <div class="prop-children">
+<details class="prop">
+<summary>
+  <span class="prop-name">aclUserConfig</span>
+  <span class="type-badge">object</span> <span class="required-badge">required</span>
+</summary>
+<div class="prop-content"><div class="prop-desc">ACLUserConfig configures Redis ACL user authentication.</div>
+  <div class="prop-children">
+<details class="prop">
+<summary>
+  <span class="prop-name">passwordSecretRef</span>
+  <span class="type-badge">object</span> <span class="required-badge">required</span>
+</summary>
+<div class="prop-content"><div class="prop-desc">PasswordSecretRef references a Secret containing the Redis ACL password.</div>
+  <div class="prop-children">
+<div class="prop-leaf">
+  <span class="prop-name">key</span>
+  <span class="type-badge">string</span> <span class="required-badge">required</span>
+  <div class="leaf-desc">Key is the key within the secret
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">name</span>
+  <span class="type-badge">string</span> <span class="required-badge">required</span>
+  <div class="leaf-desc">Name is the name of the secret
+  </div>
+</div>
+  </div>
+</div>
+</details>
+<details class="prop">
+<summary>
+  <span class="prop-name">usernameSecretRef</span>
+  <span class="type-badge">object</span> <span class="required-badge">required</span>
+</summary>
+<div class="prop-content"><div class="prop-desc">UsernameSecretRef references a Secret containing the Redis ACL username.</div>
+  <div class="prop-children">
+<div class="prop-leaf">
+  <span class="prop-name">key</span>
+  <span class="type-badge">string</span> <span class="required-badge">required</span>
+  <div class="leaf-desc">Key is the key within the secret
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">name</span>
+  <span class="type-badge">string</span> <span class="required-badge">required</span>
+  <div class="leaf-desc">Name is the name of the secret
+  </div>
+</div>
+  </div>
+</div>
+</details>
+  </div>
+</div>
+</details>
+<div class="prop-leaf">
+  <span class="prop-name">dialTimeout</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">DialTimeout is the timeout for establishing connections.
+Format: Go duration string (e.g., &#34;5s&#34;, &#34;1m&#34;).<div class="leaf-constraints">pattern: ^([0-9]+(\.[0-9]+)?(ns|us|µs|ms|s|m|h))+$</div>
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">readTimeout</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">ReadTimeout is the timeout for socket reads.
+Format: Go duration string (e.g., &#34;3s&#34;, &#34;1m&#34;).<div class="leaf-constraints">pattern: ^([0-9]+(\.[0-9]+)?(ns|us|µs|ms|s|m|h))+$</div>
+  </div>
+</div>
+<details class="prop">
+<summary>
+  <span class="prop-name">sentinelConfig</span>
+  <span class="type-badge">object</span> <span class="required-badge">required</span>
+</summary>
+<div class="prop-content"><div class="prop-desc">SentinelConfig holds Redis Sentinel configuration.</div>
+  <div class="prop-children">
+<div class="prop-leaf">
+  <span class="prop-name">db</span>
+  <span class="type-badge">integer</span>
+  <div class="leaf-desc">DB is the Redis database number.<div class="leaf-constraints">format: int32</div>
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">masterName</span>
+  <span class="type-badge">string</span> <span class="required-badge">required</span>
+  <div class="leaf-desc">MasterName is the name of the Redis master monitored by Sentinel.
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">sentinelAddrs</span>
+  <span class="type-badge">[]string</span>
+  <div class="leaf-desc">SentinelAddrs is a list of Sentinel host:port addresses.
+Mutually exclusive with SentinelService.
+  </div>
+</div>
+<details class="prop">
+<summary>
+  <span class="prop-name">sentinelService</span>
+  <span class="type-badge">object</span>
+</summary>
+<div class="prop-content"><div class="prop-desc">SentinelService enables automatic discovery from a Kubernetes Service.
+Mutually exclusive with SentinelAddrs.</div>
+  <div class="prop-children">
+<div class="prop-leaf">
+  <span class="prop-name">name</span>
+  <span class="type-badge">string</span> <span class="required-badge">required</span>
+  <div class="leaf-desc">Name of the Sentinel Service.
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">namespace</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">Namespace of the Sentinel Service (defaults to same namespace).
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">port</span>
+  <span class="type-badge">integer</span>
+  <div class="leaf-desc">Port of the Sentinel service.<div class="leaf-constraints">format: int32</div>
+  </div>
+</div>
+  </div>
+</div>
+</details>
+  </div>
+</div>
+</details>
+<details class="prop">
+<summary>
+  <span class="prop-name">sentinelTls</span>
+  <span class="type-badge">object</span>
+</summary>
+<div class="prop-content"><div class="prop-desc">SentinelTLS configures TLS for connections to Sentinel instances.
+Presence of this field enables TLS. Omit to use plaintext.
+When omitted, sentinel connections use plaintext (no fallback to TLS config).</div>
+  <div class="prop-children">
+<details class="prop">
+<summary>
+  <span class="prop-name">caCertSecretRef</span>
+  <span class="type-badge">object</span>
+</summary>
+<div class="prop-content"><div class="prop-desc">CACertSecretRef references a Secret containing a PEM-encoded CA certificate
+for verifying the server. When not specified, system root CAs are used.</div>
+  <div class="prop-children">
+<div class="prop-leaf">
+  <span class="prop-name">key</span>
+  <span class="type-badge">string</span> <span class="required-badge">required</span>
+  <div class="leaf-desc">Key is the key within the secret
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">name</span>
+  <span class="type-badge">string</span> <span class="required-badge">required</span>
+  <div class="leaf-desc">Name is the name of the secret
+  </div>
+</div>
+  </div>
+</div>
+</details>
+<div class="prop-leaf">
+  <span class="prop-name">insecureSkipVerify</span>
+  <span class="type-badge">boolean</span>
+  <div class="leaf-desc">InsecureSkipVerify skips TLS certificate verification.
+Use when connecting to services with self-signed certificates.
+  </div>
+</div>
+  </div>
+</div>
+</details>
+<details class="prop">
+<summary>
+  <span class="prop-name">tls</span>
+  <span class="type-badge">object</span>
+</summary>
+<div class="prop-content"><div class="prop-desc">TLS configures TLS for connections to the Redis/Valkey master.
+Presence of this field enables TLS. Omit to use plaintext.</div>
+  <div class="prop-children">
+<details class="prop">
+<summary>
+  <span class="prop-name">caCertSecretRef</span>
+  <span class="type-badge">object</span>
+</summary>
+<div class="prop-content"><div class="prop-desc">CACertSecretRef references a Secret containing a PEM-encoded CA certificate
+for verifying the server. When not specified, system root CAs are used.</div>
+  <div class="prop-children">
+<div class="prop-leaf">
+  <span class="prop-name">key</span>
+  <span class="type-badge">string</span> <span class="required-badge">required</span>
+  <div class="leaf-desc">Key is the key within the secret
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">name</span>
+  <span class="type-badge">string</span> <span class="required-badge">required</span>
+  <div class="leaf-desc">Name is the name of the secret
+  </div>
+</div>
+  </div>
+</div>
+</details>
+<div class="prop-leaf">
+  <span class="prop-name">insecureSkipVerify</span>
+  <span class="type-badge">boolean</span>
+  <div class="leaf-desc">InsecureSkipVerify skips TLS certificate verification.
+Use when connecting to services with self-signed certificates.
+  </div>
+</div>
+  </div>
+</div>
+</details>
+<div class="prop-leaf">
+  <span class="prop-name">writeTimeout</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">WriteTimeout is the timeout for socket writes.
+Format: Go duration string (e.g., &#34;3s&#34;, &#34;1m&#34;).<div class="leaf-constraints">pattern: ^([0-9]+(\.[0-9]+)?(ns|us|µs|ms|s|m|h))+$</div>
+  </div>
+</div>
+  </div>
+</div>
+</details>
+<div class="prop-leaf">
+  <span class="prop-name">type</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">Type specifies the storage backend type.
+Valid values: &#34;memory&#34; (default), &#34;redis&#34;.<div class="leaf-constraints">enum: memory, redis</div>
+  </div>
+</div>
+  </div>
+</div>
+</details>
+<details class="prop">
+<summary>
+  <span class="prop-name">tokenLifespans</span>
+  <span class="type-badge">object</span>
+</summary>
+<div class="prop-content"><div class="prop-desc">TokenLifespans configures the duration that various tokens are valid.
+If not specified, defaults are applied (access: 1h, refresh: 7d, authCode: 10m).</div>
+  <div class="prop-children">
+<div class="prop-leaf">
+  <span class="prop-name">accessTokenLifespan</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">AccessTokenLifespan is the duration that access tokens are valid.
+Format: Go duration string (e.g., &#34;1h&#34;, &#34;30m&#34;, &#34;24h&#34;).
+If empty, defaults to 1 hour.<div class="leaf-constraints">pattern: ^([0-9]+(\.[0-9]+)?(ns|us|µs|ms|s|m|h))+$</div>
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">authCodeLifespan</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">AuthCodeLifespan is the duration that authorization codes are valid.
+Format: Go duration string (e.g., &#34;10m&#34;, &#34;5m&#34;).
+If empty, defaults to 10 minutes.<div class="leaf-constraints">pattern: ^([0-9]+(\.[0-9]+)?(ns|us|µs|ms|s|m|h))+$</div>
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">refreshTokenLifespan</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">RefreshTokenLifespan is the duration that refresh tokens are valid.
+Format: Go duration string (e.g., &#34;168h&#34;, &#34;7d&#34; as &#34;168h&#34;).
+If empty, defaults to 7 days (168h).<div class="leaf-constraints">pattern: ^([0-9]+(\.[0-9]+)?(ns|us|µs|ms|s|m|h))+$</div>
+  </div>
+</div>
+  </div>
+</div>
+</details>
+<details class="prop">
+<summary>
+  <span class="prop-name">upstreamProviders</span>
+  <span class="type-badge">[]object</span> <span class="required-badge">required</span>
+</summary>
+<div class="prop-content"><div class="prop-desc">UpstreamProviders configures connections to upstream Identity Providers.
+The embedded auth server delegates authentication to these providers.
+MCPServer and MCPRemoteProxy support a single upstream; VirtualMCPServer supports multiple.</div><div class="prop-constraints">minItems: 1</div>
+  <div class="prop-children">
+<div class="prop-leaf">
+  <span class="prop-name">name</span>
+  <span class="type-badge">string</span> <span class="required-badge">required</span>
+  <div class="leaf-desc">Name uniquely identifies this upstream provider.
+Used for routing decisions and session binding in multi-upstream scenarios.
+Must be lowercase alphanumeric with hyphens (DNS-label-like).<div class="leaf-constraints">pattern: ^[a-z0-9]([a-z0-9-]*[a-z0-9])?$</div><div class="leaf-constraints">minLength: 1</div><div class="leaf-constraints">maxLength: 63</div>
+  </div>
+</div>
+<details class="prop">
+<summary>
+  <span class="prop-name">oauth2Config</span>
+  <span class="type-badge">object</span>
+</summary>
+<div class="prop-content"><div class="prop-desc">OAuth2Config contains OAuth 2.0-specific configuration.
+Required when Type is &#34;oauth2&#34;, must be nil when Type is &#34;oidc&#34;.</div>
+  <div class="prop-children">
+<div class="prop-leaf">
+  <span class="prop-name">additionalAuthorizationParams</span>
+  <span class="type-badge">object</span>
+  <div class="leaf-desc">AdditionalAuthorizationParams are extra query parameters to include in
+authorization requests sent to the upstream provider.
+This is useful for providers that require custom parameters, such as
+Google&#39;s access_type=offline for obtaining refresh tokens.
+Framework-managed parameters (response_type, client_id, redirect_uri,
+scope, state, code_challenge, code_challenge_method, nonce) are not allowed.
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">authorizationEndpoint</span>
+  <span class="type-badge">string</span> <span class="required-badge">required</span>
+  <div class="leaf-desc">AuthorizationEndpoint is the URL for the OAuth authorization endpoint.<div class="leaf-constraints">pattern: ^https?://.*$</div>
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">clientId</span>
+  <span class="type-badge">string</span> <span class="required-badge">required</span>
+  <div class="leaf-desc">ClientID is the OAuth 2.0 client identifier registered with the upstream IDP.
+  </div>
+</div>
+<details class="prop">
+<summary>
+  <span class="prop-name">clientSecretRef</span>
+  <span class="type-badge">object</span>
+</summary>
+<div class="prop-content"><div class="prop-desc">ClientSecretRef references a Kubernetes Secret containing the OAuth 2.0 client secret.
+Optional for public clients using PKCE instead of client secret.</div>
+  <div class="prop-children">
+<div class="prop-leaf">
+  <span class="prop-name">key</span>
+  <span class="type-badge">string</span> <span class="required-badge">required</span>
+  <div class="leaf-desc">Key is the key within the secret
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">name</span>
+  <span class="type-badge">string</span> <span class="required-badge">required</span>
+  <div class="leaf-desc">Name is the name of the secret
+  </div>
+</div>
+  </div>
+</div>
+</details>
+<div class="prop-leaf">
+  <span class="prop-name">redirectUri</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">RedirectURI is the callback URL where the upstream IDP will redirect after authentication.
+When not specified, defaults to `{resourceUrl}/oauth/callback` where `resourceUrl` is the
+URL associated with the resource (e.g., MCPServer or vMCP) using this config.
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">scopes</span>
+  <span class="type-badge">[]string</span>
+  <div class="leaf-desc">Scopes are the OAuth scopes to request from the upstream IDP.
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">tokenEndpoint</span>
+  <span class="type-badge">string</span> <span class="required-badge">required</span>
+  <div class="leaf-desc">TokenEndpoint is the URL for the OAuth token endpoint.<div class="leaf-constraints">pattern: ^https?://.*$</div>
+  </div>
+</div>
+<details class="prop">
+<summary>
+  <span class="prop-name">tokenResponseMapping</span>
+  <span class="type-badge">object</span>
+</summary>
+<div class="prop-content"><div class="prop-desc">TokenResponseMapping configures custom field extraction from non-standard token responses.
+Some OAuth providers (e.g., GovSlack) nest token fields under non-standard paths
+instead of returning them at the top level. When set, ToolHive performs the token
+exchange HTTP call directly and extracts fields using the configured dot-notation paths.
+If nil, standard OAuth 2.0 token response parsing is used.</div>
+  <div class="prop-children">
+<div class="prop-leaf">
+  <span class="prop-name">accessTokenPath</span>
+  <span class="type-badge">string</span> <span class="required-badge">required</span>
+  <div class="leaf-desc">AccessTokenPath is the dot-notation path to the access token in the response.
+Example: &#34;authed_user.access_token&#34;<div class="leaf-constraints">minLength: 1</div>
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">expiresInPath</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">ExpiresInPath is the dot-notation path to the expires_in value (in seconds).
+If not specified, defaults to &#34;expires_in&#34;.
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">refreshTokenPath</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">RefreshTokenPath is the dot-notation path to the refresh token in the response.
+If not specified, defaults to &#34;refresh_token&#34;.
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">scopePath</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">ScopePath is the dot-notation path to the scope string in the response.
+If not specified, defaults to &#34;scope&#34;.
+  </div>
+</div>
+  </div>
+</div>
+</details>
+<details class="prop">
+<summary>
+  <span class="prop-name">userInfo</span>
+  <span class="type-badge">object</span> <span class="required-badge">required</span>
+</summary>
+<div class="prop-content"><div class="prop-desc">UserInfo contains configuration for fetching user information from the upstream provider.
+Required for OAuth2 providers to resolve user identity.</div>
+  <div class="prop-children">
+<div class="prop-leaf">
+  <span class="prop-name">additionalHeaders</span>
+  <span class="type-badge">object</span>
+  <div class="leaf-desc">AdditionalHeaders contains extra headers to include in the userinfo request.
+Useful for providers that require specific headers (e.g., GitHub&#39;s Accept header).
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">endpointUrl</span>
+  <span class="type-badge">string</span> <span class="required-badge">required</span>
+  <div class="leaf-desc">EndpointURL is the URL of the userinfo endpoint.<div class="leaf-constraints">pattern: ^https?://.*$</div>
+  </div>
+</div>
+<details class="prop">
+<summary>
+  <span class="prop-name">fieldMapping</span>
+  <span class="type-badge">object</span>
+</summary>
+<div class="prop-content"><div class="prop-desc">FieldMapping contains custom field mapping configuration for non-standard providers.
+If nil, standard OIDC field names are used (&#34;sub&#34;, &#34;name&#34;, &#34;email&#34;).</div>
+  <div class="prop-children">
+<div class="prop-leaf">
+  <span class="prop-name">emailFields</span>
+  <span class="type-badge">[]string</span>
+  <div class="leaf-desc">EmailFields is an ordered list of field names to try for the email address.
+The first non-empty value found will be used.
+Default: [&#34;email&#34;]
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">nameFields</span>
+  <span class="type-badge">[]string</span>
+  <div class="leaf-desc">NameFields is an ordered list of field names to try for the display name.
+The first non-empty value found will be used.
+Default: [&#34;name&#34;]
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">subjectFields</span>
+  <span class="type-badge">[]string</span>
+  <div class="leaf-desc">SubjectFields is an ordered list of field names to try for the user ID.
+The first non-empty value found will be used.
+Default: [&#34;sub&#34;]
+  </div>
+</div>
+  </div>
+</div>
+</details>
+<div class="prop-leaf">
+  <span class="prop-name">httpMethod</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">HTTPMethod is the HTTP method to use for the userinfo request.
+If not specified, defaults to GET.<div class="leaf-constraints">enum: GET, POST</div>
+  </div>
+</div>
+  </div>
+</div>
+</details>
+  </div>
+</div>
+</details>
+<details class="prop">
+<summary>
+  <span class="prop-name">oidcConfig</span>
+  <span class="type-badge">object</span>
+</summary>
+<div class="prop-content"><div class="prop-desc">OIDCConfig contains OIDC-specific configuration.
+Required when Type is &#34;oidc&#34;, must be nil when Type is &#34;oauth2&#34;.</div>
+  <div class="prop-children">
+<div class="prop-leaf">
+  <span class="prop-name">additionalAuthorizationParams</span>
+  <span class="type-badge">object</span>
+  <div class="leaf-desc">AdditionalAuthorizationParams are extra query parameters to include in
+authorization requests sent to the upstream provider.
+This is useful for providers that require custom parameters, such as
+Google&#39;s access_type=offline for obtaining refresh tokens.
+Note: when using access_type=offline, also set explicit scopes to avoid
+the default offline_access scope being sent alongside it.
+Framework-managed parameters (response_type, client_id, redirect_uri,
+scope, state, code_challenge, code_challenge_method, nonce) are not allowed.
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">clientId</span>
+  <span class="type-badge">string</span> <span class="required-badge">required</span>
+  <div class="leaf-desc">ClientID is the OAuth 2.0 client identifier registered with the upstream IDP.
+  </div>
+</div>
+<details class="prop">
+<summary>
+  <span class="prop-name">clientSecretRef</span>
+  <span class="type-badge">object</span>
+</summary>
+<div class="prop-content"><div class="prop-desc">ClientSecretRef references a Kubernetes Secret containing the OAuth 2.0 client secret.
+Optional for public clients using PKCE instead of client secret.</div>
+  <div class="prop-children">
+<div class="prop-leaf">
+  <span class="prop-name">key</span>
+  <span class="type-badge">string</span> <span class="required-badge">required</span>
+  <div class="leaf-desc">Key is the key within the secret
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">name</span>
+  <span class="type-badge">string</span> <span class="required-badge">required</span>
+  <div class="leaf-desc">Name is the name of the secret
+  </div>
+</div>
+  </div>
+</div>
+</details>
+<div class="prop-leaf">
+  <span class="prop-name">issuerUrl</span>
+  <span class="type-badge">string</span> <span class="required-badge">required</span>
+  <div class="leaf-desc">IssuerURL is the OIDC issuer URL for automatic endpoint discovery.
+Must be a valid HTTPS URL.<div class="leaf-constraints">pattern: ^https://.*$</div>
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">redirectUri</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">RedirectURI is the callback URL where the upstream IDP will redirect after authentication.
+When not specified, defaults to `{resourceUrl}/oauth/callback` where `resourceUrl` is the
+URL associated with the resource (e.g., MCPServer or vMCP) using this config.
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">scopes</span>
+  <span class="type-badge">[]string</span>
+  <div class="leaf-desc">Scopes are the OAuth scopes to request from the upstream IDP.
+If not specified, defaults to [&#34;openid&#34;, &#34;offline_access&#34;].
+When using additionalAuthorizationParams with provider-specific refresh token
+mechanisms (e.g., Google&#39;s access_type=offline), set explicit scopes to avoid
+sending both offline_access and the provider-specific parameter.
+  </div>
+</div>
+<details class="prop">
+<summary>
+  <span class="prop-name">userInfoOverride</span>
+  <span class="type-badge">object</span>
+</summary>
+<div class="prop-content"><div class="prop-desc">UserInfoOverride allows customizing UserInfo fetching behavior for OIDC providers.
+By default, the UserInfo endpoint is discovered automatically via OIDC discovery.
+Use this to override the endpoint URL, HTTP method, or field mappings for providers
+that return non-standard claim names in their UserInfo response.</div>
+  <div class="prop-children">
+<div class="prop-leaf">
+  <span class="prop-name">additionalHeaders</span>
+  <span class="type-badge">object</span>
+  <div class="leaf-desc">AdditionalHeaders contains extra headers to include in the userinfo request.
+Useful for providers that require specific headers (e.g., GitHub&#39;s Accept header).
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">endpointUrl</span>
+  <span class="type-badge">string</span> <span class="required-badge">required</span>
+  <div class="leaf-desc">EndpointURL is the URL of the userinfo endpoint.<div class="leaf-constraints">pattern: ^https?://.*$</div>
+  </div>
+</div>
+<details class="prop">
+<summary>
+  <span class="prop-name">fieldMapping</span>
+  <span class="type-badge">object</span>
+</summary>
+<div class="prop-content"><div class="prop-desc">FieldMapping contains custom field mapping configuration for non-standard providers.
+If nil, standard OIDC field names are used (&#34;sub&#34;, &#34;name&#34;, &#34;email&#34;).</div>
+  <div class="prop-children">
+<div class="prop-leaf">
+  <span class="prop-name">emailFields</span>
+  <span class="type-badge">[]string</span>
+  <div class="leaf-desc">EmailFields is an ordered list of field names to try for the email address.
+The first non-empty value found will be used.
+Default: [&#34;email&#34;]
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">nameFields</span>
+  <span class="type-badge">[]string</span>
+  <div class="leaf-desc">NameFields is an ordered list of field names to try for the display name.
+The first non-empty value found will be used.
+Default: [&#34;name&#34;]
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">subjectFields</span>
+  <span class="type-badge">[]string</span>
+  <div class="leaf-desc">SubjectFields is an ordered list of field names to try for the user ID.
+The first non-empty value found will be used.
+Default: [&#34;sub&#34;]
+  </div>
+</div>
+  </div>
+</div>
+</details>
+<div class="prop-leaf">
+  <span class="prop-name">httpMethod</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">HTTPMethod is the HTTP method to use for the userinfo request.
+If not specified, defaults to GET.<div class="leaf-constraints">enum: GET, POST</div>
+  </div>
+</div>
+  </div>
+</div>
+</details>
+  </div>
+</div>
+</details>
+<div class="prop-leaf">
+  <span class="prop-name">type</span>
+  <span class="type-badge">string</span> <span class="required-badge">required</span>
+  <div class="leaf-desc">Type specifies the provider type: &#34;oidc&#34; or &#34;oauth2&#34;<div class="leaf-constraints">enum: oidc, oauth2</div>
+  </div>
+</div>
+  </div>
+</div>
+</details>
+  </div>
+</div>
+</details>
+<details class="prop">
+<summary>
+  <span class="prop-name">config</span>
+  <span class="type-badge">object</span>
+</summary>
+<div class="prop-content"><div class="prop-desc">Config is the Virtual MCP server configuration.
+The audit config from here is also supported, but not required.</div>
+  <div class="prop-children">
+<details class="prop">
+<summary>
+  <span class="prop-name">aggregation</span>
+  <span class="type-badge">object</span>
+</summary>
+<div class="prop-content"><div class="prop-desc">Aggregation defines tool aggregation and conflict resolution strategies.
+Supports ToolConfigRef for Kubernetes-native MCPToolConfig resource references.</div>
+  <div class="prop-children">
+<div class="prop-leaf">
+  <span class="prop-name">conflictResolution</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">ConflictResolution defines the strategy for resolving tool name conflicts.
+- prefix: Automatically prefix tool names with workload identifier
+- priority: First workload in priority order wins
+- manual: Explicitly define overrides for all conflicts<div class="leaf-constraints">enum: prefix, priority, manual</div>
+  </div>
+</div>
+<details class="prop">
+<summary>
+  <span class="prop-name">conflictResolutionConfig</span>
+  <span class="type-badge">object</span>
+</summary>
+<div class="prop-content"><div class="prop-desc">ConflictResolutionConfig provides configuration for the chosen strategy.</div>
+  <div class="prop-children">
+<div class="prop-leaf">
+  <span class="prop-name">prefixFormat</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">PrefixFormat defines the prefix format for the &#34;prefix&#34; strategy.
+Supports placeholders: {workload}, {workload}_, {workload}.
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">priorityOrder</span>
+  <span class="type-badge">[]string</span>
+  <div class="leaf-desc">PriorityOrder defines the workload priority order for the &#34;priority&#34; strategy.
+  </div>
+</div>
+  </div>
+</div>
+</details>
+<div class="prop-leaf">
+  <span class="prop-name">excludeAllTools</span>
+  <span class="type-badge">boolean</span>
+  <div class="leaf-desc">ExcludeAllTools hides all backend tools from MCP clients when true.
+Hidden tools are NOT advertised in tools/list responses, but they ARE
+available in the routing table for composite tools to use.
+This enables the use case where you want to hide raw backend tools from
+direct client access while exposing curated composite tool workflows.
+  </div>
+</div>
+<details class="prop">
+<summary>
+  <span class="prop-name">tools</span>
+  <span class="type-badge">[]object</span>
+</summary>
+<div class="prop-content"><div class="prop-desc">Tools defines per-workload tool filtering and overrides.</div>
+  <div class="prop-children">
+<div class="prop-leaf">
+  <span class="prop-name">excludeAll</span>
+  <span class="type-badge">boolean</span>
+  <div class="leaf-desc">ExcludeAll hides all tools from this workload from MCP clients when true.
+Hidden tools are NOT advertised in tools/list responses, but they ARE
+available in the routing table for composite tools to use.
+This enables the use case where you want to hide raw backend tools from
+direct client access while exposing curated composite tool workflows.
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">filter</span>
+  <span class="type-badge">[]string</span>
+  <div class="leaf-desc">Filter is an allow-list of tool names to advertise to MCP clients.
+Tools NOT in this list are hidden from clients (not in tools/list response)
+but remain available in the routing table for composite tools to use.
+This enables selective exposure of backend tools while allowing composite
+workflows to orchestrate all backend capabilities.
+Only used if ToolConfigRef is not specified.
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">overrides</span>
+  <span class="type-badge">object</span>
+  <div class="leaf-desc">Overrides is an inline map of tool overrides for renaming and description changes.
+Overrides are applied to tools before conflict resolution and affect both
+advertising and routing (the overridden name is used everywhere).
+Only used if ToolConfigRef is not specified.
+  </div>
+</div>
+<details class="prop">
+<summary>
+  <span class="prop-name">toolConfigRef</span>
+  <span class="type-badge">object</span>
+</summary>
+<div class="prop-content"><div class="prop-desc">ToolConfigRef references an MCPToolConfig resource for tool filtering and renaming.
+If specified, Filter and Overrides are ignored.
+Only used when running in Kubernetes with the operator.</div>
+  <div class="prop-children">
+<div class="prop-leaf">
+  <span class="prop-name">name</span>
+  <span class="type-badge">string</span> <span class="required-badge">required</span>
+  <div class="leaf-desc">Name is the name of the MCPToolConfig resource in the same namespace.
+  </div>
+</div>
+  </div>
+</div>
+</details>
+<div class="prop-leaf">
+  <span class="prop-name">workload</span>
+  <span class="type-badge">string</span> <span class="required-badge">required</span>
+  <div class="leaf-desc">Workload is the name of the backend MCPServer workload.
+  </div>
+</div>
+  </div>
+</div>
+</details>
+  </div>
+</div>
+</details>
+<details class="prop">
+<summary>
+  <span class="prop-name">audit</span>
+  <span class="type-badge">object</span>
+</summary>
+<div class="prop-content"><div class="prop-desc">Audit configures audit logging for the Virtual MCP server.
+When present, audit logs include MCP protocol operations.
+See audit.Config for available configuration options.</div>
+  <div class="prop-children">
+<div class="prop-leaf">
+  <span class="prop-name">component</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">Component is the component name to use in audit events.
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">detectApplicationErrors</span>
+  <span class="type-badge">boolean</span>
+  <div class="leaf-desc">DetectApplicationErrors controls whether the audit middleware inspects
+JSON-RPC response bodies for application-level errors when the HTTP
+status code indicates success (2xx). When enabled, a small prefix of
+the response body is buffered to detect JSON-RPC error fields,
+independent of the IncludeResponseData setting.
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">enabled</span>
+  <span class="type-badge">boolean</span>
+  <div class="leaf-desc">Enabled controls whether audit logging is enabled.
+When true, enables audit logging with the configured options.
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">eventTypes</span>
+  <span class="type-badge">[]string</span>
+  <div class="leaf-desc">EventTypes specifies which event types to audit. If empty, all events are audited.
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">excludeEventTypes</span>
+  <span class="type-badge">[]string</span>
+  <div class="leaf-desc">ExcludeEventTypes specifies which event types to exclude from auditing.
+This takes precedence over EventTypes.
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">includeRequestData</span>
+  <span class="type-badge">boolean</span>
+  <div class="leaf-desc">IncludeRequestData determines whether to include request data in audit logs.
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">includeResponseData</span>
+  <span class="type-badge">boolean</span>
+  <div class="leaf-desc">IncludeResponseData determines whether to include response data in audit logs.
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">logFile</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">LogFile specifies the file path for audit logs. If empty, logs to stdout.
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">maxDataSize</span>
+  <span class="type-badge">integer</span>
+  <div class="leaf-desc">MaxDataSize limits the size of request/response data included in audit logs (in bytes).
+  </div>
+</div>
+  </div>
+</div>
+</details>
+<details class="prop">
+<summary>
+  <span class="prop-name">backends</span>
+  <span class="type-badge">[]object</span>
+</summary>
+<div class="prop-content"><div class="prop-desc">Backends defines pre-configured backend servers for static mode.
+When OutgoingAuth.Source is &#34;inline&#34;, this field contains the full list of backend
+servers with their URLs and transport types, eliminating the need for K8s API access.
+When OutgoingAuth.Source is &#34;discovered&#34;, this field is empty and backends are
+discovered at runtime via Kubernetes API.</div>
+  <div class="prop-children">
+<div class="prop-leaf">
+  <span class="prop-name">caBundlePath</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">CABundlePath is the file path to a custom CA certificate bundle for TLS verification.
+Only valid when Type is &#34;entry&#34;. The operator mounts CA bundles at
+/etc/toolhive/ca-bundles/&lt;name&gt;/ca.crt.
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">metadata</span>
+  <span class="type-badge">object</span>
+  <div class="leaf-desc">Metadata is a custom key-value map for storing additional backend information
+such as labels, tags, or other arbitrary data (e.g., &#34;env&#34;: &#34;prod&#34;, &#34;region&#34;: &#34;us-east-1&#34;).
+This is NOT Kubernetes ObjectMeta - it&#39;s a simple string map for user-defined metadata.
+Reserved keys: &#34;group&#34; is automatically set by vMCP and any user-provided value will be overridden.
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">name</span>
+  <span class="type-badge">string</span> <span class="required-badge">required</span>
+  <div class="leaf-desc">Name is the backend identifier.
+Must match the backend name from the MCPGroup for auth config resolution.
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">transport</span>
+  <span class="type-badge">string</span> <span class="required-badge">required</span>
+  <div class="leaf-desc">Transport is the MCP transport protocol: &#34;sse&#34; or &#34;streamable-http&#34;
+Only network transports supported by vMCP client are allowed.<div class="leaf-constraints">enum: sse, streamable-http</div>
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">type</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">Type is the backend workload type: &#34;entry&#34; for MCPServerEntry backends, or empty
+for container/proxy backends. Entry backends connect directly to remote MCP servers.<div class="leaf-constraints">enum: entry, </div>
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">url</span>
+  <span class="type-badge">string</span> <span class="required-badge">required</span>
+  <div class="leaf-desc">URL is the backend&#39;s MCP server base URL.<div class="leaf-constraints">pattern: ^https?://</div>
+  </div>
+</div>
+  </div>
+</div>
+</details>
+<details class="prop">
+<summary>
+  <span class="prop-name">compositeToolRefs</span>
+  <span class="type-badge">[]object</span>
+</summary>
+<div class="prop-content"><div class="prop-desc">CompositeToolRefs references VirtualMCPCompositeToolDefinition resources
+for complex, reusable workflows. Only applicable when running in Kubernetes.
+Referenced resources must be in the same namespace as the VirtualMCPServer.</div>
+  <div class="prop-children">
+<div class="prop-leaf">
+  <span class="prop-name">name</span>
+  <span class="type-badge">string</span> <span class="required-badge">required</span>
+  <div class="leaf-desc">Name is the name of the VirtualMCPCompositeToolDefinition resource in the same namespace.
+  </div>
+</div>
+  </div>
+</div>
+</details>
+<details class="prop">
+<summary>
+  <span class="prop-name">compositeTools</span>
+  <span class="type-badge">[]object</span>
+</summary>
+<div class="prop-content"><div class="prop-desc">CompositeTools defines inline composite tool workflows.
+Full workflow definitions are embedded in the configuration.
+For Kubernetes, complex workflows can also reference VirtualMCPCompositeToolDefinition CRDs.</div>
+  <div class="prop-children">
+<div class="prop-leaf">
+  <span class="prop-name">description</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">Description describes what the workflow does.
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">name</span>
+  <span class="type-badge">string</span> <span class="required-badge">required</span>
+  <div class="leaf-desc">Name is the workflow name (unique identifier).
+  </div>
+</div>
+<details class="prop">
+<summary>
+  <span class="prop-name">output</span>
+  <span class="type-badge">object</span>
+</summary>
+<div class="prop-content"><div class="prop-desc">Output defines the structured output schema for this workflow.
+If not specified, the workflow returns the last step&#39;s output (backward compatible).</div>
+  <div class="prop-children">
+<div class="prop-leaf">
+  <span class="prop-name">properties</span>
+  <span class="type-badge">object</span> <span class="required-badge">required</span>
+  <div class="leaf-desc">Properties defines the output properties.
+Map key is the property name, value is the property definition.
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">required</span>
+  <span class="type-badge">[]string</span>
+  <div class="leaf-desc">Required lists property names that must be present in the output.
+  </div>
+</div>
+  </div>
+</div>
+</details>
+<div class="prop-leaf">
+  <span class="prop-name">parameters</span>
+  <span class="type-badge">object</span>
+  <div class="leaf-desc">Parameters defines input parameter schema in JSON Schema format.
+Should be a JSON Schema object with &#34;type&#34;: &#34;object&#34; and &#34;properties&#34;.
+Example:
+  {
+    &#34;type&#34;: &#34;object&#34;,
+    &#34;properties&#34;: {
+      &#34;param1&#34;: {&#34;type&#34;: &#34;string&#34;, &#34;default&#34;: &#34;value&#34;},
+      &#34;param2&#34;: {&#34;type&#34;: &#34;integer&#34;}
+    },
+    &#34;required&#34;: [&#34;param2&#34;]
+  }
+
+We use json.Map rather than a typed struct because JSON Schema is highly
+flexible with many optional fields (default, enum, minimum, maximum, pattern,
+items, additionalProperties, oneOf, anyOf, allOf, etc.). Using json.Map
+allows full JSON Schema compatibility without needing to define every possible
+field, and matches how the MCP SDK handles inputSchema.
+  </div>
+</div>
+<details class="prop">
+<summary>
+  <span class="prop-name">steps</span>
+  <span class="type-badge">[]object</span> <span class="required-badge">required</span>
+</summary>
+<div class="prop-content"><div class="prop-desc">Steps are the workflow steps to execute.</div>
+  <div class="prop-children">
+<div class="prop-leaf">
+  <span class="prop-name">arguments</span>
+  <span class="type-badge">object</span>
+  <div class="leaf-desc">Arguments is a map of argument values with template expansion support.
+Supports Go template syntax with .params and .steps for string values.
+Non-string values (integers, booleans, arrays, objects) are passed as-is.
+Note: the templating is only supported on the first level of the key-value pairs.
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">collection</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">Collection is a Go template expression that resolves to a JSON array or a slice.
+Only used when Type is &#34;forEach&#34;.
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">condition</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">Condition is a template expression that determines if the step should execute
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">defaultResults</span>
+  <span class="type-badge">object</span>
+  <div class="leaf-desc">DefaultResults provides fallback output values when this step is skipped
+(due to condition evaluating to false) or fails (when onError.action is &#34;continue&#34;).
+Each key corresponds to an output field name referenced by downstream steps.
+Required if the step may be skipped AND downstream steps reference this step&#39;s output.
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">dependsOn</span>
+  <span class="type-badge">[]string</span>
+  <div class="leaf-desc">DependsOn lists step IDs that must complete before this step
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">id</span>
+  <span class="type-badge">string</span> <span class="required-badge">required</span>
+  <div class="leaf-desc">ID is the unique identifier for this step.
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">itemVar</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">ItemVar is the variable name used to reference the current item in forEach templates.
+Defaults to &#34;item&#34; if not specified.
+Only used when Type is &#34;forEach&#34;.
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">maxIterations</span>
+  <span class="type-badge">integer</span>
+  <div class="leaf-desc">MaxIterations limits the number of items that can be iterated over.
+Defaults to 100, hard cap at 1000.
+Only used when Type is &#34;forEach&#34;.
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">maxParallel</span>
+  <span class="type-badge">integer</span>
+  <div class="leaf-desc">MaxParallel limits the number of concurrent iterations in a forEach step.
+Defaults to the DAG executor&#39;s maxParallel (10).
+Only used when Type is &#34;forEach&#34;.
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">message</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">Message is the elicitation message
+Only used when Type is &#34;elicitation&#34;
+  </div>
+</div>
+<details class="prop">
+<summary>
+  <span class="prop-name">onCancel</span>
+  <span class="type-badge">object</span>
+</summary>
+<div class="prop-content"><div class="prop-desc">OnCancel defines the action to take when the user cancels/dismisses the elicitation
+Only used when Type is &#34;elicitation&#34;</div>
+  <div class="prop-children">
+<div class="prop-leaf">
+  <span class="prop-name">action</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">Action defines the action to take when the user declines or cancels
+- skip_remaining: Skip remaining steps in the workflow
+- abort: Abort the entire workflow execution
+- continue: Continue to the next step<div class="leaf-constraints">enum: skip_remaining, abort, continue</div>
+  </div>
+</div>
+  </div>
+</div>
+</details>
+<details class="prop">
+<summary>
+  <span class="prop-name">onDecline</span>
+  <span class="type-badge">object</span>
+</summary>
+<div class="prop-content"><div class="prop-desc">OnDecline defines the action to take when the user explicitly declines the elicitation
+Only used when Type is &#34;elicitation&#34;</div>
+  <div class="prop-children">
+<div class="prop-leaf">
+  <span class="prop-name">action</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">Action defines the action to take when the user declines or cancels
+- skip_remaining: Skip remaining steps in the workflow
+- abort: Abort the entire workflow execution
+- continue: Continue to the next step<div class="leaf-constraints">enum: skip_remaining, abort, continue</div>
+  </div>
+</div>
+  </div>
+</div>
+</details>
+<details class="prop">
+<summary>
+  <span class="prop-name">onError</span>
+  <span class="type-badge">object</span>
+</summary>
+<div class="prop-content"><div class="prop-desc">OnError defines error handling behavior</div>
+  <div class="prop-children">
+<div class="prop-leaf">
+  <span class="prop-name">action</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">Action defines the action to take on error<div class="leaf-constraints">enum: abort, continue, retry</div>
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">retryCount</span>
+  <span class="type-badge">integer</span>
+  <div class="leaf-desc">RetryCount is the maximum number of retries
+Only used when Action is &#34;retry&#34;
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">retryDelay</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">RetryDelay is the delay between retry attempts
+Only used when Action is &#34;retry&#34;<div class="leaf-constraints">pattern: ^([0-9]+(\.[0-9]+)?(ns|us|µs|ms|s|m|h))+$</div>
+  </div>
+</div>
+  </div>
+</div>
+</details>
+<div class="prop-leaf">
+  <span class="prop-name">schema</span>
+  <span class="type-badge">object</span>
+  <div class="leaf-desc">Schema defines the expected response schema for elicitation
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">step</span>
+  <span class="type-badge">object</span>
+  <div class="leaf-desc">InnerStep defines the step to execute for each item in the collection.
+Only used when Type is &#34;forEach&#34;. Only tool-type inner steps are supported.
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">timeout</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">Timeout is the maximum execution time for this step<div class="leaf-constraints">pattern: ^([0-9]+(\.[0-9]+)?(ns|us|µs|ms|s|m|h))+$</div>
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">tool</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">Tool is the tool to call (format: &#34;workload.tool_name&#34;)
+Only used when Type is &#34;tool&#34;
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">type</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">Type is the step type (tool, elicitation, etc.)<div class="leaf-constraints">enum: tool, elicitation, forEach</div>
+  </div>
+</div>
+  </div>
+</div>
+</details>
+<div class="prop-leaf">
+  <span class="prop-name">timeout</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">Timeout is the maximum workflow execution time.<div class="leaf-constraints">pattern: ^([0-9]+(\.[0-9]+)?(ns|us|µs|ms|s|m|h))+$</div>
+  </div>
+</div>
+  </div>
+</div>
+</details>
+<div class="prop-leaf">
+  <span class="prop-name">groupRef</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">Group references an existing MCPGroup that defines backend workloads.
+In standalone CLI mode, this is set from the YAML config file.
+In Kubernetes, the operator populates this from spec.groupRef during conversion.
+  </div>
+</div>
+<details class="prop">
+<summary>
+  <span class="prop-name">incomingAuth</span>
+  <span class="type-badge">object</span>
+</summary>
+<div class="prop-content"><div class="prop-desc">IncomingAuth configures how clients authenticate to the virtual MCP server.
+When using the Kubernetes operator, this is populated by the converter from
+VirtualMCPServerSpec.IncomingAuth and any values set here will be superseded.</div>
+  <div class="prop-children">
+<details class="prop">
+<summary>
+  <span class="prop-name">authz</span>
+  <span class="type-badge">object</span>
+</summary>
+<div class="prop-content"><div class="prop-desc">Authz contains authorization configuration (optional).</div>
+  <div class="prop-children">
+<div class="prop-leaf">
+  <span class="prop-name">policies</span>
+  <span class="type-badge">[]string</span>
+  <div class="leaf-desc">Policies contains Cedar policy definitions (when Type = &#34;cedar&#34;).
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">primaryUpstreamProvider</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">PrimaryUpstreamProvider names the upstream IDP provider whose access
+token should be used as the source of JWT claims for Cedar evaluation.
+When empty, claims from the ToolHive-issued token are used.
+Must match an upstream provider name configured in the embedded auth server
+(e.g. &#34;default&#34;, &#34;github&#34;). Only relevant when the embedded auth server is active.
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">type</span>
+  <span class="type-badge">string</span> <span class="required-badge">required</span>
+  <div class="leaf-desc">Type is the authz type: &#34;cedar&#34;, &#34;none&#34;
+  </div>
+</div>
+  </div>
+</div>
+</details>
+<details class="prop">
+<summary>
+  <span class="prop-name">oidc</span>
+  <span class="type-badge">object</span>
+</summary>
+<div class="prop-content"><div class="prop-desc">OIDC contains OIDC configuration (when Type = &#34;oidc&#34;).</div>
+  <div class="prop-children">
+<div class="prop-leaf">
+  <span class="prop-name">audience</span>
+  <span class="type-badge">string</span> <span class="required-badge">required</span>
+  <div class="leaf-desc">Audience is the required token audience.
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">clientId</span>
+  <span class="type-badge">string</span> <span class="required-badge">required</span>
+  <div class="leaf-desc">ClientID is the OAuth client ID.
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">clientSecretEnv</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">ClientSecretEnv is the name of the environment variable containing the client secret.
+This is the secure way to reference secrets - the actual secret value is never stored
+in configuration files, only the environment variable name.
+The secret value will be resolved from this environment variable at runtime.
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">insecureAllowHttp</span>
+  <span class="type-badge">boolean</span>
+  <div class="leaf-desc">InsecureAllowHTTP allows HTTP (non-HTTPS) OIDC issuers for development/testing
+WARNING: This is insecure and should NEVER be used in production
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">introspectionUrl</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">IntrospectionURL is the token introspection endpoint URL (RFC 7662).
+When set, enables token introspection for opaque (non-JWT) tokens.
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">issuer</span>
+  <span class="type-badge">string</span> <span class="required-badge">required</span>
+  <div class="leaf-desc">Issuer is the OIDC issuer URL.<div class="leaf-constraints">pattern: ^https?://</div>
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">jwksAllowPrivateIp</span>
+  <span class="type-badge">boolean</span>
+  <div class="leaf-desc">JwksAllowPrivateIP allows OIDC discovery and JWKS fetches to private IP addresses.
+Enable when the embedded auth server runs on a loopback address and
+the OIDC middleware needs to fetch its JWKS from that address.
+Use with caution - only enable for trusted internal IDPs or testing.
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">jwksUrl</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">JWKSURL is the explicit JWKS endpoint URL.
+When set, skips OIDC discovery and fetches the JWKS directly from this URL.
+This is useful when the OIDC issuer does not serve a /.well-known/openid-configuration.
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">protectedResourceAllowPrivateIp</span>
+  <span class="type-badge">boolean</span>
+  <div class="leaf-desc">ProtectedResourceAllowPrivateIP allows protected resource endpoint on private IP addresses
+Use with caution - only enable for trusted internal IDPs or testing
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">resource</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">Resource is the OAuth 2.0 resource indicator (RFC 8707).
+Used in WWW-Authenticate header and OAuth discovery metadata (RFC 9728).
+If not specified, defaults to Audience.
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">scopes</span>
+  <span class="type-badge">[]string</span>
+  <div class="leaf-desc">Scopes are the required OAuth scopes.
+  </div>
+</div>
+  </div>
+</div>
+</details>
+<div class="prop-leaf">
+  <span class="prop-name">type</span>
+  <span class="type-badge">string</span> <span class="required-badge">required</span>
+  <div class="leaf-desc">Type is the auth type: &#34;oidc&#34;, &#34;local&#34;, &#34;anonymous&#34;
+  </div>
+</div>
+  </div>
+</div>
+</details>
+<div class="prop-leaf">
+  <span class="prop-name">metadata</span>
+  <span class="type-badge">object</span>
+  <div class="leaf-desc">Metadata stores additional configuration metadata.
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">name</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">Name is the virtual MCP server name.
+  </div>
+</div>
+<details class="prop">
+<summary>
+  <span class="prop-name">operational</span>
+  <span class="type-badge">object</span>
+</summary>
+<div class="prop-content"><div class="prop-desc">Operational configures operational settings.</div>
+  <div class="prop-children">
+<details class="prop">
+<summary>
+  <span class="prop-name">failureHandling</span>
+  <span class="type-badge">object</span>
+</summary>
+<div class="prop-content"><div class="prop-desc">FailureHandling configures failure handling behavior.</div>
+  <div class="prop-children">
+<details class="prop">
+<summary>
+  <span class="prop-name">circuitBreaker</span>
+  <span class="type-badge">object</span>
+</summary>
+<div class="prop-content"><div class="prop-desc">CircuitBreaker configures circuit breaker behavior.</div>
+  <div class="prop-children">
+<div class="prop-leaf">
+  <span class="prop-name">enabled</span>
+  <span class="type-badge">boolean</span>
+  <div class="leaf-desc">Enabled controls whether circuit breaker is enabled.
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">failureThreshold</span>
+  <span class="type-badge">integer</span>
+  <div class="leaf-desc">FailureThreshold is the number of failures before opening the circuit.
+Must be &gt;= 1.<div class="leaf-constraints">minimum: 1</div>
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">timeout</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">Timeout is the duration to wait before attempting to close the circuit.
+Must be &gt;= 1s to prevent thrashing.<div class="leaf-constraints">pattern: ^([0-9]+(\.[0-9]+)?(ns|us|µs|ms|s|m|h))+$</div>
+  </div>
+</div>
+  </div>
+</div>
+</details>
+<div class="prop-leaf">
+  <span class="prop-name">healthCheckInterval</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">HealthCheckInterval is the interval between health checks.<div class="leaf-constraints">pattern: ^([0-9]+(\.[0-9]+)?(ns|us|µs|ms|s|m|h))+$</div>
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">healthCheckTimeout</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">HealthCheckTimeout is the maximum duration for a single health check operation.
+Should be less than HealthCheckInterval to prevent checks from queuing up.<div class="leaf-constraints">pattern: ^([0-9]+(\.[0-9]+)?(ns|us|µs|ms|s|m|h))+$</div>
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">partialFailureMode</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">PartialFailureMode defines behavior when some backends are unavailable.
+- fail: Fail entire request if any backend is unavailable
+- best_effort: Continue with available backends<div class="leaf-constraints">enum: fail, best_effort</div>
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">statusReportingInterval</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">StatusReportingInterval is the interval for reporting status updates to Kubernetes.
+This controls how often the vMCP runtime reports backend health and phase changes.
+Lower values provide faster status updates but increase API server load.<div class="leaf-constraints">pattern: ^([0-9]+(\.[0-9]+)?(ns|us|µs|ms|s|m|h))+$</div>
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">unhealthyThreshold</span>
+  <span class="type-badge">integer</span>
+  <div class="leaf-desc">UnhealthyThreshold is the number of consecutive failures before marking unhealthy.
+  </div>
+</div>
+  </div>
+</div>
+</details>
+<div class="prop-leaf">
+  <span class="prop-name">logLevel</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">LogLevel sets the logging level for the Virtual MCP server.
+The only valid value is &#34;debug&#34; to enable debug logging.
+When omitted or empty, the server uses info level logging.<div class="leaf-constraints">enum: debug</div>
+  </div>
+</div>
+<details class="prop">
+<summary>
+  <span class="prop-name">timeouts</span>
+  <span class="type-badge">object</span>
+</summary>
+<div class="prop-content"><div class="prop-desc">Timeouts configures timeout settings.</div>
+  <div class="prop-children">
+<div class="prop-leaf">
+  <span class="prop-name">default</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">Default is the default timeout for backend requests.<div class="leaf-constraints">pattern: ^([0-9]+(\.[0-9]+)?(ns|us|µs|ms|s|m|h))+$</div>
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">perWorkload</span>
+  <span class="type-badge">object</span>
+  <div class="leaf-desc">PerWorkload defines per-workload timeout overrides.
+  </div>
+</div>
+  </div>
+</div>
+</details>
+  </div>
+</div>
+</details>
+<details class="prop">
+<summary>
+  <span class="prop-name">optimizer</span>
+  <span class="type-badge">object</span>
+</summary>
+<div class="prop-content"><div class="prop-desc">Optimizer configures the MCP optimizer for context optimization on large toolsets.
+When enabled, vMCP exposes only find_tool and call_tool operations to clients
+instead of all backend tools directly. This reduces token usage by allowing
+LLMs to discover relevant tools on demand rather than receiving all tool definitions.</div>
+  <div class="prop-children">
+<div class="prop-leaf">
+  <span class="prop-name">embeddingService</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">EmbeddingService is the full base URL of the embedding service endpoint
+(e.g., http://my-embedding.default.svc.cluster.local:8080) for semantic
+tool discovery.
+
+In a Kubernetes environment, it is more convenient to use the
+VirtualMCPServerSpec.EmbeddingServerRef field instead of setting this
+directly. EmbeddingServerRef references an EmbeddingServer CRD by name,
+and the operator automatically resolves the referenced resource&#39;s
+Status.URL to populate this field. This provides managed lifecycle
+(the operator watches the EmbeddingServer for readiness and URL changes)
+and avoids hardcoding service URLs in the config. If both
+EmbeddingServerRef and this field are set, EmbeddingServerRef takes
+precedence and this value is overridden with a warning.
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">embeddingServiceTimeout</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">EmbeddingServiceTimeout is the HTTP request timeout for calls to the embedding service.
+Defaults to 30s if not specified.<div class="leaf-constraints">pattern: ^([0-9]+(\.[0-9]+)?(ns|us|µs|ms|s|m|h))+$</div>
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">hybridSearchSemanticRatio</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">HybridSearchSemanticRatio controls the balance between semantic (meaning-based)
+and keyword search results. 0.0 = all keyword, 1.0 = all semantic.
+Defaults to &#34;0.5&#34; if not specified or empty.
+Serialized as a string because CRDs do not support float types portably.<div class="leaf-constraints">pattern: ^([0-9]*[.])?[0-9]+$</div>
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">maxToolsToReturn</span>
+  <span class="type-badge">integer</span>
+  <div class="leaf-desc">MaxToolsToReturn is the maximum number of tool results returned by a search query.
+Defaults to 8 if not specified or zero.<div class="leaf-constraints">minimum: 1</div><div class="leaf-constraints">maximum: 50</div>
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">semanticDistanceThreshold</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">SemanticDistanceThreshold is the maximum distance for semantic search results.
+Results exceeding this threshold are filtered out from semantic search.
+This threshold does not apply to keyword search.
+Range: 0 = identical, 2 = completely unrelated.
+Defaults to &#34;1.0&#34; if not specified or empty.
+Serialized as a string because CRDs do not support float types portably.<div class="leaf-constraints">pattern: ^([0-9]*[.])?[0-9]+$</div>
+  </div>
+</div>
+  </div>
+</div>
+</details>
+<details class="prop">
+<summary>
+  <span class="prop-name">outgoingAuth</span>
+  <span class="type-badge">object</span>
+</summary>
+<div class="prop-content"><div class="prop-desc">OutgoingAuth configures how the virtual MCP server authenticates to backends.
+When using the Kubernetes operator, this is populated by the converter from
+VirtualMCPServerSpec.OutgoingAuth and any values set here will be superseded.</div>
+  <div class="prop-children">
+<div class="prop-leaf">
+  <span class="prop-name">backends</span>
+  <span class="type-badge">object</span>
+  <div class="leaf-desc">Backends contains per-backend auth configuration.
+  </div>
+</div>
+<details class="prop">
+<summary>
+  <span class="prop-name">default</span>
+  <span class="type-badge">object</span>
+</summary>
+<div class="prop-content"><div class="prop-desc">Default is the default auth strategy for backends without explicit config.</div>
+  <div class="prop-children">
+<details class="prop">
+<summary>
+  <span class="prop-name">headerInjection</span>
+  <span class="type-badge">object</span>
+</summary>
+<div class="prop-content"><div class="prop-desc">HeaderInjection contains configuration for header injection auth strategy.
+Used when Type = &#34;header_injection&#34;.</div>
+  <div class="prop-children">
+<div class="prop-leaf">
+  <span class="prop-name">headerName</span>
+  <span class="type-badge">string</span> <span class="required-badge">required</span>
+  <div class="leaf-desc">HeaderName is the name of the header to inject (e.g., &#34;Authorization&#34;).
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">headerValue</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">HeaderValue is the static header value to inject.
+Either HeaderValue or HeaderValueEnv should be set, not both.
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">headerValueEnv</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">HeaderValueEnv is the environment variable name containing the header value.
+The value will be resolved at runtime from this environment variable.
+Either HeaderValue or HeaderValueEnv should be set, not both.
+  </div>
+</div>
+  </div>
+</div>
+</details>
+<details class="prop">
+<summary>
+  <span class="prop-name">tokenExchange</span>
+  <span class="type-badge">object</span>
+</summary>
+<div class="prop-content"><div class="prop-desc">TokenExchange contains configuration for token exchange auth strategy.
+Used when Type = &#34;token_exchange&#34;.</div>
+  <div class="prop-children">
+<div class="prop-leaf">
+  <span class="prop-name">audience</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">Audience is the target audience for the exchanged token.
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">clientId</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">ClientID is the OAuth client ID for the token exchange request.
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">clientSecret</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">ClientSecret is the OAuth client secret (use ClientSecretEnv for security).
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">clientSecretEnv</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">ClientSecretEnv is the environment variable name containing the client secret.
+The value will be resolved at runtime from this environment variable.
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">scopes</span>
+  <span class="type-badge">[]string</span>
+  <div class="leaf-desc">Scopes are the requested scopes for the exchanged token.
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">subjectProviderName</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">SubjectProviderName selects which upstream provider&#39;s token to use as the
+subject token. When set, the token is looked up from Identity.UpstreamTokens
+instead of using Identity.Token.
+When left empty and an embedded authorization server is configured, the system
+automatically populates this field with the first configured upstream provider name.
+Set it explicitly to override that default or to select a specific provider when
+multiple upstreams are configured.
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">subjectTokenType</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">SubjectTokenType is the token type of the incoming subject token.
+Defaults to &#34;urn:ietf:params:oauth:token-type:access_token&#34; if not specified.
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">tokenUrl</span>
+  <span class="type-badge">string</span> <span class="required-badge">required</span>
+  <div class="leaf-desc">TokenURL is the OAuth token endpoint URL for token exchange.
+  </div>
+</div>
+  </div>
+</div>
+</details>
+<div class="prop-leaf">
+  <span class="prop-name">type</span>
+  <span class="type-badge">string</span> <span class="required-badge">required</span>
+  <div class="leaf-desc">Type is the auth strategy: &#34;unauthenticated&#34;, &#34;header_injection&#34;, &#34;token_exchange&#34;, &#34;upstream_inject&#34;
+  </div>
+</div>
+<details class="prop">
+<summary>
+  <span class="prop-name">upstreamInject</span>
+  <span class="type-badge">object</span>
+</summary>
+<div class="prop-content"><div class="prop-desc">UpstreamInject contains configuration for upstream inject auth strategy.
+Used when Type = &#34;upstream_inject&#34;.</div>
+  <div class="prop-children">
+<div class="prop-leaf">
+  <span class="prop-name">providerName</span>
+  <span class="type-badge">string</span> <span class="required-badge">required</span>
+  <div class="leaf-desc">ProviderName is the name of the upstream provider configured in the
+embedded authorization server. Must match an entry in AuthServer.Upstreams.
+  </div>
+</div>
+  </div>
+</div>
+</details>
+  </div>
+</div>
+</details>
+<div class="prop-leaf">
+  <span class="prop-name">source</span>
+  <span class="type-badge">string</span> <span class="required-badge">required</span>
+  <div class="leaf-desc">Source defines how to discover backend auth: &#34;inline&#34;, &#34;discovered&#34;
+- inline: Explicit configuration in OutgoingAuth
+- discovered: Auto-discover from backend MCPServer.externalAuthConfigRef (Kubernetes only)
+  </div>
+</div>
+  </div>
+</div>
+</details>
+<details class="prop">
+<summary>
+  <span class="prop-name">sessionStorage</span>
+  <span class="type-badge">object</span>
+</summary>
+<div class="prop-content"><div class="prop-desc">SessionStorage configures session storage for stateful horizontal scaling.
+When provider is &#34;redis&#34;, the operator injects Redis connection parameters
+(address, db, keyPrefix) here. The Redis password is provided separately via
+the THV_SESSION_REDIS_PASSWORD environment variable.</div>
+  <div class="prop-children">
+<div class="prop-leaf">
+  <span class="prop-name">address</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">Address is the Redis server address (required when provider is redis).
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">db</span>
+  <span class="type-badge">integer</span>
+  <div class="leaf-desc">DB is the Redis database number.<div class="leaf-constraints">format: int32</div><div class="leaf-constraints">minimum: 0</div>
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">keyPrefix</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">KeyPrefix is an optional prefix for all Redis keys used by ToolHive.
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">provider</span>
+  <span class="type-badge">string</span> <span class="required-badge">required</span>
+  <div class="leaf-desc">Provider is the session storage backend type.<div class="leaf-constraints">enum: memory, redis</div>
+  </div>
+</div>
+  </div>
+</div>
+</details>
+<details class="prop">
+<summary>
+  <span class="prop-name">telemetry</span>
+  <span class="type-badge">object</span>
+</summary>
+<div class="prop-content"><div class="prop-desc">Telemetry configures OpenTelemetry-based observability for the Virtual MCP server
+including distributed tracing, OTLP metrics export, and Prometheus metrics endpoint.
+Deprecated (Kubernetes operator only): When deploying via the operator, use
+VirtualMCPServer.spec.telemetryConfigRef to reference a shared MCPTelemetryConfig
+resource instead. This field remains valid for standalone (non-operator) deployments.</div>
+  <div class="prop-children">
+<div class="prop-leaf">
+  <span class="prop-name">caCertPath</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">CACertPath is the file path to a CA certificate bundle for the OTLP endpoint.
+When set, the OTLP exporters use this CA to verify the collector&#39;s TLS certificate
+instead of relying solely on the system CA pool.
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">customAttributes</span>
+  <span class="type-badge">object</span>
+  <div class="leaf-desc">CustomAttributes contains custom resource attributes to be added to all telemetry signals.
+These are parsed from CLI flags (--otel-custom-attributes) or environment variables
+(OTEL_RESOURCE_ATTRIBUTES) as key=value pairs.
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">enablePrometheusMetricsPath</span>
+  <span class="type-badge">boolean</span>
+  <div class="leaf-desc">EnablePrometheusMetricsPath controls whether to expose Prometheus-style /metrics endpoint.
+The metrics are served on the main transport port at /metrics.
+This is separate from OTLP metrics which are sent to the Endpoint.
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">endpoint</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">Endpoint is the OTLP endpoint URL
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">environmentVariables</span>
+  <span class="type-badge">[]string</span>
+  <div class="leaf-desc">EnvironmentVariables is a list of environment variable names that should be
+included in telemetry spans as attributes. Only variables in this list will
+be read from the host machine and included in spans for observability.
+Example: [&#34;NODE_ENV&#34;, &#34;DEPLOYMENT_ENV&#34;, &#34;SERVICE_VERSION&#34;]
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">headers</span>
+  <span class="type-badge">object</span>
+  <div class="leaf-desc">Headers contains authentication headers for the OTLP endpoint.
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">insecure</span>
+  <span class="type-badge">boolean</span>
+  <div class="leaf-desc">Insecure indicates whether to use HTTP instead of HTTPS for the OTLP endpoint.
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">metricsEnabled</span>
+  <span class="type-badge">boolean</span>
+  <div class="leaf-desc">MetricsEnabled controls whether OTLP metrics are enabled.
+When false, OTLP metrics are not sent even if an endpoint is configured.
+This is independent of EnablePrometheusMetricsPath.
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">samplingRate</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">SamplingRate is the trace sampling rate (0.0-1.0) as a string.
+Only used when TracingEnabled is true.
+Example: &#34;0.05&#34; for 5% sampling.
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">serviceName</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">ServiceName is the service name for telemetry.
+When omitted, defaults to the server name (e.g., VirtualMCPServer name).
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">serviceVersion</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">ServiceVersion is the service version for telemetry.
+When omitted, defaults to the ToolHive version.
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">tracingEnabled</span>
+  <span class="type-badge">boolean</span>
+  <div class="leaf-desc">TracingEnabled controls whether distributed tracing is enabled.
+When false, no tracer provider is created even if an endpoint is configured.
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">useLegacyAttributes</span>
+  <span class="type-badge">boolean</span>
+  <div class="leaf-desc">UseLegacyAttributes controls whether legacy (pre-MCP OTEL semconv) attribute names
+are emitted alongside the new standard attribute names. When true, spans include both
+old and new attribute names for backward compatibility with existing dashboards.
+Currently defaults to true; this will change to false in a future release.
+  </div>
+</div>
+  </div>
+</div>
+</details>
+  </div>
+</div>
+</details>
+<details class="prop">
+<summary>
+  <span class="prop-name">embeddingServerRef</span>
+  <span class="type-badge">object</span>
+</summary>
+<div class="prop-content"><div class="prop-desc">EmbeddingServerRef references an existing EmbeddingServer resource by name.
+When the optimizer is enabled, this field is required to point to a ready EmbeddingServer
+that provides embedding capabilities.
+The referenced EmbeddingServer must exist in the same namespace and be ready.</div>
+  <div class="prop-children">
+<div class="prop-leaf">
+  <span class="prop-name">name</span>
+  <span class="type-badge">string</span> <span class="required-badge">required</span>
+  <div class="leaf-desc">Name is the name of the EmbeddingServer resource
+  </div>
+</div>
+  </div>
+</div>
+</details>
+<details class="prop">
+<summary>
+  <span class="prop-name">groupRef</span>
+  <span class="type-badge">object</span> <span class="required-badge">required</span>
+</summary>
+<div class="prop-content"><div class="prop-desc">GroupRef references the MCPGroup that defines backend workloads.
+The referenced MCPGroup must exist in the same namespace.</div>
+  <div class="prop-children">
+<div class="prop-leaf">
+  <span class="prop-name">name</span>
+  <span class="type-badge">string</span> <span class="required-badge">required</span>
+  <div class="leaf-desc">Name is the name of the MCPGroup resource in the same namespace<div class="leaf-constraints">minLength: 1</div>
+  </div>
+</div>
+  </div>
+</div>
+</details>
+<details class="prop">
+<summary>
+  <span class="prop-name">incomingAuth</span>
+  <span class="type-badge">object</span> <span class="required-badge">required</span>
+</summary>
+<div class="prop-content"><div class="prop-desc">IncomingAuth configures authentication for clients connecting to the Virtual MCP server.
+Must be explicitly set - use &#34;anonymous&#34; type when no authentication is required.
+This field takes precedence over config.IncomingAuth and should be preferred because it
+supports Kubernetes-native secret references (SecretKeyRef, ConfigMapRef) for secure
+dynamic discovery of credentials, rather than requiring secrets to be embedded in config.</div>
+  <div class="prop-children">
+<details class="prop">
+<summary>
+  <span class="prop-name">authzConfig</span>
+  <span class="type-badge">object</span>
+</summary>
+<div class="prop-content"><div class="prop-desc">AuthzConfig defines authorization policy configuration
+Reuses MCPServer authz patterns</div>
+  <div class="prop-children">
+<details class="prop">
+<summary>
+  <span class="prop-name">configMap</span>
+  <span class="type-badge">object</span>
+</summary>
+<div class="prop-content"><div class="prop-desc">ConfigMap references a ConfigMap containing authorization configuration
+Only used when Type is &#34;configMap&#34;</div>
+  <div class="prop-children">
+<div class="prop-leaf">
+  <span class="prop-name">key</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">Key is the key in the ConfigMap that contains the authorization configuration
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">name</span>
+  <span class="type-badge">string</span> <span class="required-badge">required</span>
+  <div class="leaf-desc">Name is the name of the ConfigMap
+  </div>
+</div>
+  </div>
+</div>
+</details>
+<details class="prop">
+<summary>
+  <span class="prop-name">inline</span>
+  <span class="type-badge">object</span>
+</summary>
+<div class="prop-content"><div class="prop-desc">Inline contains direct authorization configuration
+Only used when Type is &#34;inline&#34;</div>
+  <div class="prop-children">
+<div class="prop-leaf">
+  <span class="prop-name">entitiesJson</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">EntitiesJSON is a JSON string representing Cedar entities
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">policies</span>
+  <span class="type-badge">[]string</span> <span class="required-badge">required</span>
+  <div class="leaf-desc">Policies is a list of Cedar policy strings<div class="leaf-constraints">minItems: 1</div>
+  </div>
+</div>
+  </div>
+</div>
+</details>
+<div class="prop-leaf">
+  <span class="prop-name">type</span>
+  <span class="type-badge">string</span> <span class="required-badge">required</span>
+  <div class="leaf-desc">Type is the type of authorization configuration<div class="leaf-constraints">enum: configMap, inline</div>
+  </div>
+</div>
+  </div>
+</div>
+</details>
+<details class="prop">
+<summary>
+  <span class="prop-name">oidcConfigRef</span>
+  <span class="type-badge">object</span>
+</summary>
+<div class="prop-content"><div class="prop-desc">OIDCConfigRef references a shared MCPOIDCConfig resource for OIDC authentication.
+The referenced MCPOIDCConfig must exist in the same namespace as this VirtualMCPServer.
+Per-server overrides (audience, scopes) are specified here; shared provider config
+lives in the MCPOIDCConfig resource.</div>
+  <div class="prop-children">
+<div class="prop-leaf">
+  <span class="prop-name">audience</span>
+  <span class="type-badge">string</span> <span class="required-badge">required</span>
+  <div class="leaf-desc">Audience is the expected audience for token validation.
+This MUST be unique per server to prevent token replay attacks.<div class="leaf-constraints">minLength: 1</div>
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">name</span>
+  <span class="type-badge">string</span> <span class="required-badge">required</span>
+  <div class="leaf-desc">Name is the name of the MCPOIDCConfig resource<div class="leaf-constraints">minLength: 1</div>
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">resourceUrl</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">ResourceURL is the public URL for OAuth protected resource metadata (RFC 9728).
+When the server is exposed via Ingress or gateway, set this to the external
+URL that MCP clients connect to. If not specified, defaults to the internal
+Kubernetes service URL.
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">scopes</span>
+  <span class="type-badge">[]string</span>
+  <div class="leaf-desc">Scopes is the list of OAuth scopes to advertise in the well-known endpoint (RFC 9728).
+If empty, defaults to [&#34;openid&#34;].
+  </div>
+</div>
+  </div>
+</div>
+</details>
+<div class="prop-leaf">
+  <span class="prop-name">type</span>
+  <span class="type-badge">string</span> <span class="required-badge">required</span>
+  <div class="leaf-desc">Type defines the authentication type: anonymous or oidc
+When no authentication is required, explicitly set this to &#34;anonymous&#34;<div class="leaf-constraints">enum: anonymous, oidc</div>
+  </div>
+</div>
+  </div>
+</div>
+</details>
+<details class="prop">
+<summary>
+  <span class="prop-name">outgoingAuth</span>
+  <span class="type-badge">object</span>
+</summary>
+<div class="prop-content"><div class="prop-desc">OutgoingAuth configures authentication from Virtual MCP to backend MCPServers.
+This field takes precedence over config.OutgoingAuth and should be preferred because it
+supports Kubernetes-native secret references (SecretKeyRef, ConfigMapRef) for secure
+dynamic discovery of credentials, rather than requiring secrets to be embedded in config.</div>
+  <div class="prop-children">
+<div class="prop-leaf">
+  <span class="prop-name">backends</span>
+  <span class="type-badge">object</span>
+  <div class="leaf-desc">Backends defines per-backend authentication overrides
+Works in all modes (discovered, inline)
+  </div>
+</div>
+<details class="prop">
+<summary>
+  <span class="prop-name">default</span>
+  <span class="type-badge">object</span>
+</summary>
+<div class="prop-content"><div class="prop-desc">Default defines default behavior for backends without explicit auth config</div>
+  <div class="prop-children">
+<details class="prop">
+<summary>
+  <span class="prop-name">externalAuthConfigRef</span>
+  <span class="type-badge">object</span>
+</summary>
+<div class="prop-content"><div class="prop-desc">ExternalAuthConfigRef references an MCPExternalAuthConfig resource
+Only used when Type is &#34;externalAuthConfigRef&#34;</div>
+  <div class="prop-children">
+<div class="prop-leaf">
+  <span class="prop-name">name</span>
+  <span class="type-badge">string</span> <span class="required-badge">required</span>
+  <div class="leaf-desc">Name is the name of the MCPExternalAuthConfig resource
+  </div>
+</div>
+  </div>
+</div>
+</details>
+<div class="prop-leaf">
+  <span class="prop-name">type</span>
+  <span class="type-badge">string</span> <span class="required-badge">required</span>
+  <div class="leaf-desc">Type defines the authentication type<div class="leaf-constraints">enum: discovered, externalAuthConfigRef</div>
+  </div>
+</div>
+  </div>
+</div>
+</details>
+<div class="prop-leaf">
+  <span class="prop-name">source</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">Source defines how backend authentication configurations are determined
+- discovered: Automatically discover from backend&#39;s MCPServer.spec.externalAuthConfigRef
+- inline: Explicit per-backend configuration in VirtualMCPServer<div class="leaf-constraints">enum: discovered, inline</div>
+  </div>
+</div>
+  </div>
+</div>
+</details>
+<div class="prop-leaf">
+  <span class="prop-name">podTemplateSpec</span>
+  <span class="type-badge">object</span>
+  <div class="leaf-desc">PodTemplateSpec defines the pod template to use for the Virtual MCP server
+This allows for customizing the pod configuration beyond what is provided by the other fields.
+Note that to modify the specific container the Virtual MCP server runs in, you must specify
+the &#39;vmcp&#39; container name in the PodTemplateSpec.
+This field accepts a PodTemplateSpec object as JSON/YAML.
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">replicas</span>
+  <span class="type-badge">integer</span>
+  <div class="leaf-desc">Replicas is the desired number of vMCP pod replicas.
+VirtualMCPServer creates a single Deployment for the vMCP aggregator process,
+so there is only one replicas field (unlike MCPServer which has separate
+Replicas and BackendReplicas for its two Deployments).
+When nil, the operator does not set Deployment.Spec.Replicas, leaving replica
+management to an HPA or other external controller.<div class="leaf-constraints">format: int32</div><div class="leaf-constraints">minimum: 0</div>
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">serviceAccount</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">ServiceAccount is the name of an already existing service account to use by the Virtual MCP server.
+If not specified, a ServiceAccount will be created automatically and used by the Virtual MCP server.
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">serviceType</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">ServiceType specifies the Kubernetes service type for the Virtual MCP server<div class="leaf-constraints">enum: ClusterIP, NodePort, LoadBalancer</div>
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">sessionAffinity</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">SessionAffinity controls whether the Service routes repeated client connections to the same pod.
+MCP protocols (SSE, streamable-http) are stateful, so ClientIP is the default.
+Set to &#34;None&#34; for stateless servers or when using an external load balancer with its own affinity.<div class="leaf-constraints">enum: ClientIP, None</div>
+  </div>
+</div>
+<details class="prop">
+<summary>
+  <span class="prop-name">sessionStorage</span>
+  <span class="type-badge">object</span>
+</summary>
+<div class="prop-content"><div class="prop-desc">SessionStorage configures session storage for stateful horizontal scaling.
+When nil, no session storage is configured.</div>
+  <div class="prop-children">
+<div class="prop-leaf">
+  <span class="prop-name">address</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">Address is the Redis server address (required when provider is redis)<div class="leaf-constraints">minLength: 1</div>
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">db</span>
+  <span class="type-badge">integer</span>
+  <div class="leaf-desc">DB is the Redis database number<div class="leaf-constraints">format: int32</div><div class="leaf-constraints">minimum: 0</div>
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">keyPrefix</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">KeyPrefix is an optional prefix for all Redis keys used by ToolHive
+  </div>
+</div>
+<details class="prop">
+<summary>
+  <span class="prop-name">passwordRef</span>
+  <span class="type-badge">object</span>
+</summary>
+<div class="prop-content"><div class="prop-desc">PasswordRef is a reference to a Secret key containing the Redis password</div>
+  <div class="prop-children">
+<div class="prop-leaf">
+  <span class="prop-name">key</span>
+  <span class="type-badge">string</span> <span class="required-badge">required</span>
+  <div class="leaf-desc">Key is the key within the secret
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">name</span>
+  <span class="type-badge">string</span> <span class="required-badge">required</span>
+  <div class="leaf-desc">Name is the name of the secret
+  </div>
+</div>
+  </div>
+</div>
+</details>
+<div class="prop-leaf">
+  <span class="prop-name">provider</span>
+  <span class="type-badge">string</span> <span class="required-badge">required</span>
+  <div class="leaf-desc">Provider is the session storage backend type<div class="leaf-constraints">enum: memory, redis</div>
+  </div>
+</div>
+  </div>
+</div>
+</details>
+<details class="prop">
+<summary>
+  <span class="prop-name">telemetryConfigRef</span>
+  <span class="type-badge">object</span>
+</summary>
+<div class="prop-content"><div class="prop-desc">TelemetryConfigRef references an MCPTelemetryConfig resource for shared telemetry configuration.
+The referenced MCPTelemetryConfig must exist in the same namespace as this VirtualMCPServer.
+Cross-namespace references are not supported for security and isolation reasons.</div>
+  <div class="prop-children">
+<div class="prop-leaf">
+  <span class="prop-name">name</span>
+  <span class="type-badge">string</span> <span class="required-badge">required</span>
+  <div class="leaf-desc">Name is the name of the MCPTelemetryConfig resource<div class="leaf-constraints">minLength: 1</div>
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">serviceName</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">ServiceName overrides the telemetry service name for this specific server.
+This MUST be unique per server for proper observability (e.g., distinguishing
+traces and metrics from different servers sharing the same collector).
+If empty, defaults to the server name with &#34;thv-&#34; prefix at runtime.
+  </div>
+</div>
+  </div>
+</div>
+</details>
+  </div>
+</div>
+</details>
+<details class="prop">
+<summary>
+  <span class="prop-name">status</span>
+  <span class="type-badge">object</span>
+</summary>
+<div class="prop-content"><div class="prop-desc">VirtualMCPServerStatus defines the observed state of VirtualMCPServer</div>
+  <div class="prop-children">
+<div class="prop-leaf">
+  <span class="prop-name">backendCount</span>
+  <span class="type-badge">integer</span>
+  <div class="leaf-desc">BackendCount is the number of routable backends (ready &#43; unauthenticated).
+Excludes unavailable, degraded, and unknown backends.<div class="leaf-constraints">format: int32</div>
+  </div>
+</div>
+<details class="prop">
+<summary>
+  <span class="prop-name">conditions</span>
+  <span class="type-badge">[]object</span>
+</summary>
+<div class="prop-content"><div class="prop-desc">Conditions represent the latest available observations of the VirtualMCPServer&#39;s state</div>
+  <div class="prop-children">
+<div class="prop-leaf">
+  <span class="prop-name">lastTransitionTime</span>
+  <span class="type-badge">string</span> <span class="required-badge">required</span>
+  <div class="leaf-desc">lastTransitionTime is the last time the condition transitioned from one status to another.
+This should be when the underlying condition changed.  If that is not known, then using the time when the API field changed is acceptable.<div class="leaf-constraints">format: date-time</div>
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">message</span>
+  <span class="type-badge">string</span> <span class="required-badge">required</span>
+  <div class="leaf-desc">message is a human readable message indicating details about the transition.
+This may be an empty string.<div class="leaf-constraints">maxLength: 32768</div>
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">observedGeneration</span>
+  <span class="type-badge">integer</span>
+  <div class="leaf-desc">observedGeneration represents the .metadata.generation that the condition was set based upon.
+For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date
+with respect to the current state of the instance.<div class="leaf-constraints">format: int64</div><div class="leaf-constraints">minimum: 0</div>
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">reason</span>
+  <span class="type-badge">string</span> <span class="required-badge">required</span>
+  <div class="leaf-desc">reason contains a programmatic identifier indicating the reason for the condition&#39;s last transition.
+Producers of specific condition types may define expected values and meanings for this field,
+and whether the values are considered a guaranteed API.
+The value should be a CamelCase string.
+This field may not be empty.<div class="leaf-constraints">pattern: ^[A-Za-z]([A-Za-z0-9_,:]*[A-Za-z0-9_])?$</div><div class="leaf-constraints">minLength: 1</div><div class="leaf-constraints">maxLength: 1024</div>
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">status</span>
+  <span class="type-badge">string</span> <span class="required-badge">required</span>
+  <div class="leaf-desc">status of the condition, one of True, False, Unknown.<div class="leaf-constraints">enum: True, False, Unknown</div>
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">type</span>
+  <span class="type-badge">string</span> <span class="required-badge">required</span>
+  <div class="leaf-desc">type of condition in CamelCase or in foo.example.com/CamelCase.<div class="leaf-constraints">pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$</div><div class="leaf-constraints">maxLength: 316</div>
+  </div>
+</div>
+  </div>
+</div>
+</details>
+<details class="prop">
+<summary>
+  <span class="prop-name">discoveredBackends</span>
+  <span class="type-badge">[]object</span>
+</summary>
+<div class="prop-content"><div class="prop-desc">DiscoveredBackends lists discovered backend configurations from the MCPGroup</div>
+  <div class="prop-children">
+<div class="prop-leaf">
+  <span class="prop-name">authConfigRef</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">AuthConfigRef is the name of the discovered MCPExternalAuthConfig (if any)
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">authType</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">AuthType is the type of authentication configured
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">circuitBreakerState</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">CircuitBreakerState is the current circuit breaker state (closed, open, half-open).
+Empty when circuit breaker is disabled or not configured.<div class="leaf-constraints">enum: closed, open, half-open</div>
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">circuitLastChanged</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">CircuitLastChanged is the timestamp when the circuit breaker state last changed.
+Empty when circuit breaker is disabled or has never changed state.<div class="leaf-constraints">format: date-time</div>
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">consecutiveFailures</span>
+  <span class="type-badge">integer</span>
+  <div class="leaf-desc">ConsecutiveFailures is the current count of consecutive health check failures.
+Resets to 0 when the backend becomes healthy again.
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">lastHealthCheck</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">LastHealthCheck is the timestamp of the last health check<div class="leaf-constraints">format: date-time</div>
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">message</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">Message provides additional information about the backend status
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">name</span>
+  <span class="type-badge">string</span> <span class="required-badge">required</span>
+  <div class="leaf-desc">Name is the name of the backend MCPServer
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">status</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">Status is the current status of the backend (ready, degraded, unavailable, unauthenticated, unknown).
+Use BackendHealthStatus.ToCRDStatus() to populate this field.
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">url</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">URL is the URL of the backend MCPServer
+  </div>
+</div>
+  </div>
+</div>
+</details>
+<div class="prop-leaf">
+  <span class="prop-name">message</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">Message provides additional information about the current phase
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">observedGeneration</span>
+  <span class="type-badge">integer</span>
+  <div class="leaf-desc">ObservedGeneration is the most recent generation observed for this VirtualMCPServer<div class="leaf-constraints">format: int64</div>
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">oidcConfigHash</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">OIDCConfigHash is the hash of the referenced MCPOIDCConfig spec for change detection.
+Only populated when IncomingAuth.OIDCConfigRef is set.
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">phase</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">Phase is the current phase of the VirtualMCPServer<div class="leaf-constraints">enum: Pending, Ready, Degraded, Failed</div>
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">telemetryConfigHash</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">TelemetryConfigHash is the hash of the referenced MCPTelemetryConfig spec for change detection.
+Only populated when TelemetryConfigRef is set.
+  </div>
+</div>
+<div class="prop-leaf">
+  <span class="prop-name">url</span>
+  <span class="type-badge">string</span>
+  <div class="leaf-desc">URL is the URL where the Virtual MCP server can be accessed
+  </div>
+</div>
+  </div>
+</div>
+</details>
+</div>
+<div class="copied-toast" id="toast">Copied!</div>
+<footer>
+  Generated by <a href="https://github.com/sholdee/crd-schema-publisher">crd-schema-publisher</a>
+</footer>
+<script>
+(function(){
+  var props = document.querySelectorAll('.prop');
+  document.getElementById('expand-all').addEventListener('click', function(){
+    props.forEach(function(p){ p.setAttribute('open',''); });
+  });
+  document.getElementById('collapse-all').addEventListener('click', function(){
+    props.forEach(function(p){ p.removeAttribute('open'); });
+  });
+  var toast = document.getElementById('toast');
+  var toastTimer;
+  document.addEventListener('keydown', function(e){
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      if (document.activeElement && document.activeElement !== document.body) {
+        document.activeElement.blur();
+      }
+      location.href = document.body.dataset.basePath + '/';
+    }
+  });
+  document.getElementById('copy-url').addEventListener('click', function(){
+    var url = location.origin + this.dataset.url;
+    navigator.clipboard.writeText(url).then(function(){
+      clearTimeout(toastTimer);
+      toast.classList.add('show');
+      toastTimer = setTimeout(function(){ toast.classList.remove('show'); }, 1500);
+    });
+  });
+})();
+function toggleTheme(){
+  document.documentElement.classList.toggle('light');
+  localStorage.setItem('theme', document.documentElement.classList.contains('light') ? 'light' : 'dark');
+}
+</script>
+</body>
+</html>
